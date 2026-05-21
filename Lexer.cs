@@ -48,9 +48,6 @@ namespace AnalizadorLexico
             { "y", "Y" }
         };
 
-        /// <summary>
-        /// Analiza una cadena de entrada y retorna un token
-        /// </summary>
         public Token Analyze(string input)
         {
             if (string.IsNullOrEmpty(input))

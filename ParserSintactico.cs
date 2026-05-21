@@ -5,16 +5,6 @@ using System.Windows.Forms;
 
 namespace AnalizadorLexico
 {
-    /// <summary>
-    /// Parser Sintáctico Recursivo Descendente Predictivo (Top-Down) para KaViGex
-    /// Implementa la gramática LL(1) oficial del lenguaje KaViGex
-    /// 
-    /// Características:
-    /// - Parser recursivo descendente (una función por cada no-terminal)
-    /// - Lookahead de un token (analizador LL(1))
-    /// - Manejo de errores con sincronización
-    /// - Gramática libre de recursión por izquierda y con prefijos factorizados
-    /// </summary>
     public class ParserSintactico
     {
         #region Clases y Estructuras Internas
@@ -47,9 +37,6 @@ namespace AnalizadorLexico
 
         #region Constructor
 
-        /// <summary>
-        /// Constructor del Parser Sintactico
-        /// </summary>
         /// <param name="tokensDelLexer">Lista de tokens del analizador lexico</param>
         /// <param name="dgvErrores">DataGridView para mostrar errores sintacticos</param>
         /// <param name="rtSintaxis">RichTextBox para mostrar la sintaxis detectada</param>
@@ -64,17 +51,13 @@ namespace AnalizadorLexico
 
         #region Metodos Auxiliares
 
-        /// <summary>
-        /// Avanza al siguiente token
-        /// </summary>
+        // Avanza al siguiente token
         private void NextToken()
         {
             puntero++;
         }
 
-        /// <summary>
-        /// Obtiene el token actual sin avanzar
-        /// </summary>
+        // Obtiene el token actual sin avanzar
         private TokenSintactico TokenActual()
         {
             if (puntero < tokens.Count)
@@ -84,25 +67,18 @@ namespace AnalizadorLexico
             return new TokenSintactico { Tipo = "EOF", Valor = "", Linea = ultimaLinea };
         }
 
-        /// <summary>
-        /// Obtiene el tipo del token actual
-        /// </summary>
+        // Obtiene el tipo del token actual
         private string TipoActual()
         {
             return TokenActual().Tipo;
         }
 
-        /// <summary>
-        /// Verifica si se ha llegado al final del archivo
-        /// </summary>
+        // Verifica si se ha llegado al final del archivo
         private bool EsEOF()
         {
             return puntero >= tokens.Count || TipoActual() == "EOF";
         }
 
-        /// <summary>
-        /// Convierte un código de token a su nombre legible
-        /// </summary>
         /// <param name="tipoCodigo">Código del token (ej: "PR1", "CE13")</param>
         /// <returns>Nombre legible del token</returns>
         private string ObtenerNombreToken(string tipoCodigo)
@@ -142,7 +118,7 @@ namespace AnalizadorLexico
                 case "CE9": return "{";
                 case "CE10": return "}";
                 case "CE11": return ":";
-                case "CE12": return "\"";
+                case "CE12": return '"'.ToString();
                 case "CE14": return "?";
                 case "CE15": return "\\";
                 case "CE17": return ".";
@@ -176,10 +152,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// Convierte un código de token a su representación en rtSintaxis
-        /// (palabra reservada en minúsculas, símbolo, o valor del token)
-        /// </summary>
         /// <param name="tipoCodigo">Código del token (ej: "PR5", "CE13")</param>
         /// <param name="valor">Valor del token (para IDENT, CNU, CAD)</param>
         /// <returns>Representación del token para rtSintaxis</returns>
@@ -220,7 +192,7 @@ namespace AnalizadorLexico
                 case "CE9": return "{";
                 case "CE10": return "}";
                 case "CE11": return ":";
-                case "CE12": return "\"";
+                case "CE12": return '"'.ToString();
                 case "CE14": return "?";
                 case "CE15": return "\\";
                 case "CE17": return ".";
@@ -254,11 +226,8 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// Valida el token y registra error en dgvErroresSintacticos si no coincide
-        /// </summary>
-        /// <param name="tipoEsperado">Tipo de token esperado</param>
-        /// <returns>true si coincide, false si hay error</returns>
+        // Valida el token y registra error en dgvErroresSintacticos si no coincide
+        // tipoEsperado: tipo esperado del token
         private bool Match(string tipoEsperado)
         {
             if (TipoActual() == tipoEsperado)
@@ -287,10 +256,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// Agrega una fila al DataGridView de errores
-        /// </summary>
-        /// <param name="mensaje">Mensaje de error</param>
+        // Agrega una fila al DataGridView de errores
         private void Error(string mensaje)
         {
             string errorCompleto = mensaje;
@@ -307,10 +273,8 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// Sincroniza el parser avanzando tokens hasta encontrar CE13 (;) o PR2 (FIN)
-        /// Limita el consumo a 10 tokens para evitar consumir toda la entrada
-        /// </summary>
+        // Sincroniza el parser avanzando tokens hasta encontrar CE13 (;) o PR2 (FIN)
+        // Limita el consumo a 10 tokens para evitar consumir toda la entrada
         private void Sincronizar()
         {
             int tokensConsumidos = 0;
@@ -327,10 +291,7 @@ namespace AnalizadorLexico
             // NO consumir el token de sincronización para permitir continuar
         }
 
-        /// <summary>
-        /// Escribe en rtSintaxis con indentacion y número de línea
-        /// </summary>
-        /// <param name="texto">Texto a escribir</param>
+        // Escribe en rtSintaxis con indentacion y número de línea
         private void EscribirSintaxis(string texto)
         {
             // Usar contador interno para números de línea que empiece por 1
@@ -357,10 +318,8 @@ namespace AnalizadorLexico
 
         #region Metodo Publico Parse
 
-        /// <summary>
-        /// Metodo publico que inicia el analisis sintactico
-        /// Limpia los controles, llama a ParseS() y verifica que no queden tokens
-        /// </summary>
+        // Metodo publico que inicia el analisis sintactico
+        // Limpia los controles, llama a ParseS() y reinicia contadores
         public void Parse()
         {
             // Limpiar rtSintaxis
@@ -391,10 +350,8 @@ namespace AnalizadorLexico
 
         #region Producciones Principales - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// S → PR1 L_INSTR PR2 CE13
-        /// Programa: INICIO lista_instrucciones FIN ;
-        /// </summary>
+        // S → PR1 L_INSTR PR2 CE13
+        // Programa: INICIO lista_instrucciones FIN ;
         private void ParseS()
         {
             if (!Match("PR1")) return; // INICIO
@@ -409,10 +366,8 @@ namespace AnalizadorLexico
             EscribirSintaxis("fin");
         }
 
-        /// <summary>
-        /// L_INSTR → INSTR L_INSTR | ε
-        /// Lista de instrucciones
-        /// </summary>
+        // L_INSTR → INSTR L_INSTR | ε
+        // Lista de instrucciones
         private void ParseL_INSTR()
         {
             while (!EsEOF() && TipoActual() != "EOF")
@@ -466,9 +421,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// Verifica si el token puede iniciar una instrucción
-        /// </summary>
+        // Verifica si el token puede iniciar una instrucción
         private bool EsInicioInstruccion(string tipo)
         {
             return tipo == "IDENT" ||
@@ -490,12 +443,10 @@ namespace AnalizadorLexico
                    tipo == "PR21";   // NUEVO
         }
 
-        /// <summary>
-        /// INSTR → ASIG | LEER | MOSTRAR | SI | DESDE | PARA | MIENTRAS
-        ///       | REPETIR | ROMPER | LIMP | IR | ESCRIBIR | FUNCION
-        ///       | RETORNAR | VAR | NUEVO
-        /// Despachador de instrucciones
-        /// </summary>
+        // INSTR → ASIG | LEER | MOSTRAR | SI | DESDE | PARA | MIENTRAS
+        //       | REPETIR | ROMPER | LIMP | IR | ESCRIBIR | FUNCION
+        //       | RETORNAR | VAR | NUEVO
+        // Despachador de instrucciones
         private void ParseINSTR()
         {
             if (EsEOF())
@@ -606,10 +557,8 @@ namespace AnalizadorLexico
 
         #region Instrucciones Simples - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// ASIG → IDENT ASI EXP CE13
-        /// Asignación: variable = expresión ;
-        /// </summary>
+        // ASIG → IDENT ASI EXP CE13
+        // Asignación: variable = expresión ;
         private void ParseASIG()
         {
             string varName = TokenActual().Valor;
@@ -640,12 +589,10 @@ namespace AnalizadorLexico
             EscribirSintaxis($"asignación {varName} = <expresión>");
         }
 
-        /// <summary>
-        /// LEER → PR3 ARG L_ARG2_LEER CE13
-        /// L_ARG2_LEER → CE16 ARG L_ARG2_LEER | ε
-        /// ARG → IDENT
-        /// Lectura de variables
-        /// </summary>
+        // LEER → PR3 ARG L_ARG2_LEER CE13
+        // L_ARG2_LEER → CE16 ARG L_ARG2_LEER | ε
+        // ARG → IDENT
+        // Lectura de variables
         private void ParseLEER()
         {
             if (!Match("PR3")) return; // LEER
@@ -665,12 +612,10 @@ namespace AnalizadorLexico
             EscribirSintaxis("leer <identificador>");
         }
 
-        /// <summary>
-        /// MOSTRAR → PR4 ARG2 L_ARG2_MOSTRAR CE13
-        /// L_ARG2_MOSTRAR → CE16 ARG2 L_ARG2_MOSTRAR | ε
-        /// ARG2 → IDENT | CNU | CAD | EXP
-        /// Mostrar argumentos
-        /// </summary>
+        // MOSTRAR → PR4 ARG2 L_ARG2_MOSTRAR CE13
+        // L_ARG2_MOSTRAR → CE16 ARG2 L_ARG2_MOSTRAR | ε
+        // ARG2 → IDENT | CNU | CAD | EXP
+        // Mostrar argumentos
         private void ParseMOSTRAR()
         {
             if (!Match("PR4")) return; // MOSTRAR
@@ -690,10 +635,8 @@ namespace AnalizadorLexico
             EscribirSintaxis("mostrar <cadena>");
         }
 
-        /// <summary>
-        /// ROMPER → PR11 CE13
-        /// Romper ciclo
-        /// </summary>
+        // ROMPER → PR11 CE13
+        // Romper ciclo
         private void ParseROMPER()
         {
             if (!Match("PR11")) return; // ROMPER
@@ -702,10 +645,8 @@ namespace AnalizadorLexico
             EscribirSintaxis("romper");
         }
 
-        /// <summary>
-        /// LIMP → PR15 CE13
-        /// Limpiar pantalla
-        /// </summary>
+        // LIMP → PR15 CE13
+        // Limpiar pantalla
         private void ParseLIMP()
         {
             if (!Match("PR15")) return; // LIMP
@@ -714,11 +655,9 @@ namespace AnalizadorLexico
             EscribirSintaxis("limpiar");
         }
 
-        /// <summary>
-        /// VAR → PR20 IDENT L_VAR CE13
-        /// L_VAR → CE16 IDENT L_VAR | ε
-        /// Declaración de variables
-        /// </summary>
+        // VAR → PR20 IDENT L_VAR CE13
+        // L_VAR → CE16 IDENT L_VAR | ε
+        // Declaración de variables
         private void ParseVAR()
         {
             if (!Match("PR20")) return; // VAR
@@ -749,9 +688,7 @@ namespace AnalizadorLexico
 
         #region Parseadores Auxiliares - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// ARG → IDENT
-        /// </summary>
+        // ARG → IDENT
         private string ParseARG()
         {
             if (TipoActual() == "IDENT")
@@ -764,9 +701,7 @@ namespace AnalizadorLexico
             return "";
         }
 
-        /// <summary>
-        /// ARG2 → IDENT | CNU | CAD | EXP
-        /// </summary>
+        // ARG2 → IDENT | CNU | CAD | EXP
         private string ParseARG2()
         {
             string tipo = TipoActual();
@@ -789,9 +724,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// ARG3 → IDENT | CNU | EXP
-        /// </summary>
+        // ARG3 → IDENT | CNU | EXP
         private string ParseARG3()
         {
             string tipo = TipoActual();
@@ -814,9 +747,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// L_ARG2_LEER → CE16 ARG L_ARG2_LEER | ε
-        /// </summary>
+        // L_ARG2_LEER → CE16 ARG L_ARG2_LEER | ε
         private void ParseL_ARG2_LEER(StringBuilder linea)
         {
             while (TipoActual() == "CE16") // ,
@@ -831,9 +762,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// L_ARG2_MOSTRAR → CE16 ARG2 L_ARG2_MOSTRAR | ε
-        /// </summary>
+        // L_ARG2_MOSTRAR → CE16 ARG2 L_ARG2_MOSTRAR | ε
         private void ParseL_ARG2_MOSTRAR(StringBuilder linea)
         {
             while (TipoActual() == "CE16") // ,
@@ -850,9 +779,7 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// L_VAR → CE16 IDENT L_VAR | ε
-        /// </summary>
+        // L_VAR → CE16 IDENT L_VAR | ε
         private void ParseL_VAR(StringBuilder linea)
         {
             while (TipoActual() == "CE16") // ,
@@ -871,9 +798,7 @@ namespace AnalizadorLexico
 
         #region Expresiones Aritméticas - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// EXP → TERM EXP_TAIL
-        /// </summary>
+        // EXP → TERM EXP_TAIL
         private string ParseEXP()
         {
             StringBuilder exp = new StringBuilder();
@@ -884,9 +809,7 @@ namespace AnalizadorLexico
             return exp.ToString().Trim();
         }
 
-        /// <summary>
-        /// EXP_TAIL → OA1 TERM EXP_TAIL | OA2 TERM EXP_TAIL | ε
-        /// </summary>
+        // EXP_TAIL → OA1 TERM EXP_TAIL | OA2 TERM EXP_TAIL | ε
         private string ParseEXP_TAIL()
         {
             StringBuilder tail = new StringBuilder();
@@ -902,9 +825,7 @@ namespace AnalizadorLexico
             return tail.ToString();
         }
 
-        /// <summary>
-        /// TERM → FACTOR TERM_TAIL
-        /// </summary>
+        // TERM → FACTOR TERM_TAIL
         private string ParseTERM()
         {
             StringBuilder term = new StringBuilder();
@@ -915,9 +836,7 @@ namespace AnalizadorLexico
             return term.ToString();
         }
 
-        /// <summary>
-        /// TERM_TAIL → OA3 FACTOR TERM_TAIL | OA4 FACTOR TERM_TAIL | ε
-        /// </summary>
+        // TERM_TAIL → OA3 FACTOR TERM_TAIL | OA4 FACTOR TERM_TAIL | ε
         private string ParseTERM_TAIL()
         {
             StringBuilder tail = new StringBuilder();
@@ -933,9 +852,7 @@ namespace AnalizadorLexico
             return tail.ToString();
         }
 
-        /// <summary>
-        /// FACTOR → CE7 EXP CE8 | IDENT | CNU | CAD | PR21 IDENT CE7 L_ARG2_MOSTRAR CE8
-        /// </summary>
+        // FACTOR → CE7 EXP CE8 | IDENT | CNU | CAD | PR21 IDENT CE7 L_ARG2_MOSTRAR CE8
         private string ParseFACTOR()
         {
             if (TipoActual() == "CE7") // (
@@ -987,22 +904,16 @@ namespace AnalizadorLexico
 
         #region Condiciones Lógicas - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// CONDICION → COND_T CONDICION_TAIL
-        /// </summary>
         private string ParseCONDICION()
         {
             StringBuilder cond = new StringBuilder();
-            
+
             cond.Append(ParseCOND_T());
             cond.Append(ParseCONDICION_TAIL());
-            
+
             return cond.ToString().Trim();
         }
 
-        /// <summary>
-        /// CONDICION_TAIL → OPL1 COND_T CONDICION_TAIL | OPL2 COND_T CONDICION_TAIL | ε
-        /// </summary>
         private string ParseCONDICION_TAIL()
         {
             StringBuilder tail = new StringBuilder();
@@ -1018,9 +929,6 @@ namespace AnalizadorLexico
             return tail.ToString();
         }
 
-        /// <summary>
-        /// COND_T → OPL3 COND_F | COND_F
-        /// </summary>
         private string ParseCOND_T()
         {
             if (TipoActual() == "OPL3") // NO
@@ -1034,9 +942,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// COND_F → CE7 CONDICION CE8 | COMP
-        /// </summary>
         private string ParseCOND_F()
         {
             if (TipoActual() == "CE7") // (
@@ -1052,10 +957,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// COMP → VALOR OPR VALOR
-        /// OPR → OR1 | OR2 | OR3 | OR4 | OR5 | OR6
-        /// </summary>
         private string ParseCOMP()
         {
             StringBuilder comp = new StringBuilder();
@@ -1078,9 +979,6 @@ namespace AnalizadorLexico
             return comp.ToString();
         }
 
-        /// <summary>
-        /// VALOR → IDENT | CNU | CAD
-        /// </summary>
         private string ParseVALOR()
         {
             if (TipoActual() == "IDENT")
@@ -1112,10 +1010,6 @@ namespace AnalizadorLexico
 
         #region Instrucciones de Control - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// SI → PR5 CONDICION PR6 L_INSTR SINO_OPC PR2 CE13
-        /// SINO_OPC → PR7 L_INSTR | ε
-        /// </summary>
         private void ParseSI()
         {
             if (!Match("PR5")) return; // SI
@@ -1189,9 +1083,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// SINO_OPC → PR7 L_INSTR | ε
-        /// </summary>
         private void ParseSINO_OPC()
         {
             if (TipoActual() == "PR7") // SINO
@@ -1201,10 +1092,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// DESDE → PR8 IDENT ASI ARG3 PR9 ARG3 PR13 L_INSTR PR2 CE13
-        /// ARG3 → IDENT | CNU | EXP
-        /// </summary>
         private void ParseDESDE()
         {
             if (!Match("PR8")) return; // DESDE
@@ -1229,9 +1116,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("fin desde");
         }
 
-        /// <summary>
-        /// PARA → PR12 IDENT ASI ARG3 PR9 ARG3 PR13 L_INSTR PR2 CE13
-        /// </summary>
         private void ParsePARA()
         {
             if (!Match("PR12")) return; // PARA
@@ -1257,9 +1141,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("fin");
         }
 
-        /// <summary>
-        /// MIENTRAS → PR14 CONDICION PR13 L_INSTR PR2 CE13
-        /// </summary>
         private void ParseMIENTRAS()
         {
             if (!Match("PR14")) return; // MIENTRAS
@@ -1284,9 +1165,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("fin mientras");
         }
 
-        /// <summary>
-        /// REPETIR → PR10 L_INSTR PR14 CONDICION CE13
-        /// </summary>
         private void ParseREPETIR()
         {
             if (!Match("PR10")) return; // REPETIR
@@ -1331,11 +1209,6 @@ namespace AnalizadorLexico
 
         #region Instrucciones Restantes - Gramática Oficial KaViGex
 
-        /// <summary>
-        /// IR → PR16 ARG4 CE13
-        /// ARG4 → CE7 ARG5 CE16 ARG5 CE8
-        /// ARG5 → IDENT | CNU
-        /// </summary>
         private void ParseIR()
         {
             if (!Match("PR16")) return; // IR
@@ -1351,9 +1224,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("ir <argumentos>");
         }
 
-        /// <summary>
-        /// ARG5 → IDENT | CNU
-        /// </summary>
         private string ParseARG5()
         {
             if (TipoActual() == "IDENT")
@@ -1375,9 +1245,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// ESCRIBIR → PR17 ARG4 CE16 ARG2 CE13
-        /// </summary>
         private void ParseESCRIBIR()
         {
             if (!Match("PR17")) return; // ESCRIBIR
@@ -1393,13 +1260,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("escribir <argumentos>");
         }
 
-        /// <summary>
-        /// FUNCION → PR18 IDENT ARG6 ARG7 CE13
-        /// ARG6 → CE7 L_PARAMS CE8
-        /// L_PARAMS → IDENT L_PARAMS_R | ε
-        /// L_PARAMS_R → CE16 IDENT L_PARAMS_R | ε
-        /// ARG7 → CE9 L_INSTR CE10
-        /// </summary>
         private void ParseFUNCION()
         {
             if (!Match("PR18")) return; // FUNCION
@@ -1429,9 +1289,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("fin función");
         }
 
-        /// <summary>
-        /// L_PARAMS → IDENT L_PARAMS_R | ε
-        /// </summary>
         private void ParseL_PARAMS(StringBuilder parameters)
         {
             if (TipoActual() == "IDENT")
@@ -1441,9 +1298,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// L_PARAMS_R → CE16 IDENT L_PARAMS_R | ε
-        /// </summary>
         private void ParseL_PARAMS_R(StringBuilder parameters)
         {
             while (TipoActual() == "CE16") // ,
@@ -1454,10 +1308,6 @@ namespace AnalizadorLexico
             }
         }
 
-        /// <summary>
-        /// RETORNAR → PR19 ARG8 CE13 | PR19 CE13
-        /// ARG8 → CE7 IDENT CE8
-        /// </summary>
         private void ParseRETORNAR()
         {
             if (!Match("PR19")) return; // RETORNAR
@@ -1473,9 +1323,6 @@ namespace AnalizadorLexico
             EscribirSintaxis("retornar <valor>");
         }
 
-        /// <summary>
-        /// NUEVO → PR21 IDENT CE7 L_ARG2_MOSTRAR CE8 CE13
-        /// </summary>
         private void ParseNUEVO()
         {
             if (!Match("PR21")) return; // NUEVO

@@ -2,15 +2,8 @@ namespace AnalizadorLexico
 {
     partial class Form1
     {
-        /// <summary>
-        /// Variable del diseñador necesaria.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Limpiar los recursos que se estén usando.
-        /// </summary>
-        /// <param name="disposing">true si los recursos administrados se deben desechar; false en caso contrario.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -22,10 +15,6 @@ namespace AnalizadorLexico
 
         #region Código generado por el Diseñador de Windows Forms
 
-        /// <summary>
-        /// Método necesario para admitir el Diseñador. No se puede modificar
-        /// el contenido de este método con el editor de código.
-        /// </summary>
         private void InitializeComponent()
         {
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
@@ -608,33 +597,32 @@ namespace AnalizadorLexico
         #endregion
 
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.RichTextBox rtbFuente;
+        private System.Windows.Forms.RichTextBox txtNumerosLinea;
+        private System.Windows.Forms.Label lblFuente;
         private System.Windows.Forms.Button btnGuardar;
         private System.Windows.Forms.Button btnEditar;
         private System.Windows.Forms.Button btnCargar;
+        private System.Windows.Forms.RichTextBox rtbFuente;
         private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.DataGridView dgvErrores;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Linea;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Error;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button btnGuardarA;
         private System.Windows.Forms.RichTextBox rtbTokens;
         private System.Windows.Forms.GroupBox groupBox4;
-        private System.Windows.Forms.Button btnGuardarA;
-        private System.Windows.Forms.DataGridView dgvSimbolos;
-        private System.Windows.Forms.Label lblTitulo;
-        private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.Label lblFuente;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Linea;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Lexema;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Error;
-        private System.Windows.Forms.Button btnInfo;
-        private System.Windows.Forms.RichTextBox txtNumerosLinea;
+        private System.Windows.Forms.DataGridView dgvSimbolos;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column5;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column6;
+        private System.Windows.Forms.Label lblTitulo;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Button btnInfo;
+        private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.DataGridView dgvErroresSintacticos;
