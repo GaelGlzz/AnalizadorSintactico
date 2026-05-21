@@ -65,8 +65,8 @@ namespace AnalizadorLexico
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
-            this.label6 = new System.Windows.Forms.Label();
             this.rtSintaxis = new System.Windows.Forms.RichTextBox();
+            this.label6 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErrores)).BeginInit();
@@ -414,9 +414,9 @@ namespace AnalizadorLexico
             this.lblTitulo.Location = new System.Drawing.Point(28, 32);
             this.lblTitulo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTitulo.Name = "lblTitulo";
-            this.lblTitulo.Size = new System.Drawing.Size(396, 46);
+            this.lblTitulo.Size = new System.Drawing.Size(578, 46);
             this.lblTitulo.TabIndex = 4;
-            this.lblTitulo.Text = "KaViGex Sintáctico v1.1";
+            this.lblTitulo.Text = "KaViGex Analizador Sintáctico v1.1";
             this.lblTitulo.Click += new System.EventHandler(this.lblTitulo_Click_1);
             // 
             // label4
@@ -542,19 +542,6 @@ namespace AnalizadorLexico
             this.groupBox6.TabIndex = 7;
             this.groupBox6.TabStop = false;
             // 
-            // label6
-            // 
-            this.label6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
-            this.label6.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
-            this.label6.Location = new System.Drawing.Point(1, -2);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(504, 47);
-            this.label6.TabIndex = 6;
-            this.label6.Text = "Sintaxis";
-            this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            // 
             // rtSintaxis
             // 
             this.rtSintaxis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
@@ -568,6 +555,19 @@ namespace AnalizadorLexico
             this.rtSintaxis.TabIndex = 6;
             this.rtSintaxis.Text = "";
             this.rtSintaxis.TextChanged += new System.EventHandler(this.rtSintaxis_TextChanged);
+            // 
+            // label6
+            // 
+            this.label6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
+            this.label6.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
+            this.label6.Location = new System.Drawing.Point(1, -2);
+            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(504, 47);
+            this.label6.TabIndex = 6;
+            this.label6.Text = "Sintaxis";
+            this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // Form1
             // 
@@ -588,7 +588,7 @@ namespace AnalizadorLexico
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "Form1";
-            this.Text = "KaViGex Sintáctico 1.1";
+            this.Text = "KaViGex Analizador Sintáctico 1.1";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
