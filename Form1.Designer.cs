@@ -76,11 +76,9 @@ namespace AnalizadorLexico
             this.groupBox1.Controls.Add(this.btnEditar);
             this.groupBox1.Controls.Add(this.btnCargar);
             this.groupBox1.Controls.Add(this.rtbFuente);
-            this.groupBox1.Location = new System.Drawing.Point(29, 108);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox1.Location = new System.Drawing.Point(22, 88);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(505, 278);
+            this.groupBox1.Size = new System.Drawing.Size(379, 226);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             // 
@@ -90,11 +88,10 @@ namespace AnalizadorLexico
             this.txtNumerosLinea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
             this.txtNumerosLinea.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtNumerosLinea.ForeColor = System.Drawing.Color.Blue;
-            this.txtNumerosLinea.Location = new System.Drawing.Point(13, 65);
-            this.txtNumerosLinea.Margin = new System.Windows.Forms.Padding(4);
+            this.txtNumerosLinea.Location = new System.Drawing.Point(10, 53);
             this.txtNumerosLinea.Name = "txtNumerosLinea";
             this.txtNumerosLinea.ReadOnly = true;
-            this.txtNumerosLinea.Size = new System.Drawing.Size(21, 144);
+            this.txtNumerosLinea.Size = new System.Drawing.Size(16, 117);
             this.txtNumerosLinea.TabIndex = 5;
             this.txtNumerosLinea.Text = "";
             // 
@@ -103,10 +100,9 @@ namespace AnalizadorLexico
             this.lblFuente.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
             this.lblFuente.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblFuente.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
-            this.lblFuente.Location = new System.Drawing.Point(0, 9);
-            this.lblFuente.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblFuente.Location = new System.Drawing.Point(0, 7);
             this.lblFuente.Name = "lblFuente";
-            this.lblFuente.Size = new System.Drawing.Size(505, 47);
+            this.lblFuente.Size = new System.Drawing.Size(379, 38);
             this.lblFuente.TabIndex = 4;
             this.lblFuente.Text = "Programa Fuente";
             this.lblFuente.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -120,10 +116,9 @@ namespace AnalizadorLexico
             this.btnGuardar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnGuardar.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGuardar.ForeColor = System.Drawing.Color.White;
-            this.btnGuardar.Location = new System.Drawing.Point(345, 220);
-            this.btnGuardar.Margin = new System.Windows.Forms.Padding(4);
+            this.btnGuardar.Location = new System.Drawing.Point(259, 179);
             this.btnGuardar.Name = "btnGuardar";
-            this.btnGuardar.Size = new System.Drawing.Size(139, 46);
+            this.btnGuardar.Size = new System.Drawing.Size(104, 37);
             this.btnGuardar.TabIndex = 3;
             this.btnGuardar.Text = "Guardar Programa";
             this.btnGuardar.UseVisualStyleBackColor = false;
@@ -138,10 +133,9 @@ namespace AnalizadorLexico
             this.btnEditar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnEditar.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnEditar.ForeColor = System.Drawing.Color.White;
-            this.btnEditar.Location = new System.Drawing.Point(184, 220);
-            this.btnEditar.Margin = new System.Windows.Forms.Padding(4);
+            this.btnEditar.Location = new System.Drawing.Point(138, 179);
             this.btnEditar.Name = "btnEditar";
-            this.btnEditar.Size = new System.Drawing.Size(135, 46);
+            this.btnEditar.Size = new System.Drawing.Size(101, 37);
             this.btnEditar.TabIndex = 2;
             this.btnEditar.Text = "Editar Programa";
             this.btnEditar.UseVisualStyleBackColor = false;
@@ -156,10 +150,9 @@ namespace AnalizadorLexico
             this.btnCargar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCargar.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCargar.ForeColor = System.Drawing.Color.White;
-            this.btnCargar.Location = new System.Drawing.Point(23, 220);
-            this.btnCargar.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCargar.Location = new System.Drawing.Point(17, 179);
             this.btnCargar.Name = "btnCargar";
-            this.btnCargar.Size = new System.Drawing.Size(133, 46);
+            this.btnCargar.Size = new System.Drawing.Size(100, 37);
             this.btnCargar.TabIndex = 1;
             this.btnCargar.Text = "Cargar Programa";
             this.btnCargar.UseVisualStyleBackColor = false;
@@ -171,10 +164,9 @@ namespace AnalizadorLexico
             this.rtbFuente.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
             this.rtbFuente.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.rtbFuente.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(50)))), ((int)(((byte)(70)))));
-            this.rtbFuente.Location = new System.Drawing.Point(37, 65);
-            this.rtbFuente.Margin = new System.Windows.Forms.Padding(4);
+            this.rtbFuente.Location = new System.Drawing.Point(28, 53);
             this.rtbFuente.Name = "rtbFuente";
-            this.rtbFuente.Size = new System.Drawing.Size(448, 144);
+            this.rtbFuente.Size = new System.Drawing.Size(336, 117);
             this.rtbFuente.TabIndex = 0;
             this.rtbFuente.Text = "";
             this.rtbFuente.VScroll += new System.EventHandler(this.rtbFuente_VScroll_1);
@@ -184,11 +176,9 @@ namespace AnalizadorLexico
             // 
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.dgvErrores);
-            this.groupBox2.Location = new System.Drawing.Point(29, 430);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox2.Location = new System.Drawing.Point(22, 327);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(505, 217);
+            this.groupBox2.Size = new System.Drawing.Size(379, 176);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             // 
@@ -198,9 +188,8 @@ namespace AnalizadorLexico
             this.label2.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label2.Location = new System.Drawing.Point(0, 0);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(505, 47);
+            this.label2.Size = new System.Drawing.Size(379, 38);
             this.label2.TabIndex = 5;
             this.label2.Text = "Errores Léxicos";
             this.label2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -225,13 +214,12 @@ namespace AnalizadorLexico
             this.Linea,
             this.Error});
             this.dgvErrores.EnableHeadersVisualStyles = false;
-            this.dgvErrores.Location = new System.Drawing.Point(17, 64);
-            this.dgvErrores.Margin = new System.Windows.Forms.Padding(4);
+            this.dgvErrores.Location = new System.Drawing.Point(13, 52);
             this.dgvErrores.Name = "dgvErrores";
             this.dgvErrores.ReadOnly = true;
             this.dgvErrores.RowHeadersVisible = false;
             this.dgvErrores.RowHeadersWidth = 51;
-            this.dgvErrores.Size = new System.Drawing.Size(467, 126);
+            this.dgvErrores.Size = new System.Drawing.Size(350, 102);
             this.dgvErrores.TabIndex = 0;
             this.dgvErrores.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvErrores_CellContentClick);
             // 
@@ -256,11 +244,9 @@ namespace AnalizadorLexico
             this.groupBox3.Controls.Add(this.label1);
             this.groupBox3.Controls.Add(this.btnGuardarA);
             this.groupBox3.Controls.Add(this.rtbTokens);
-            this.groupBox3.Location = new System.Drawing.Point(676, 108);
-            this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox3.Location = new System.Drawing.Point(507, 88);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(505, 278);
+            this.groupBox3.Size = new System.Drawing.Size(379, 226);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             // 
@@ -269,10 +255,9 @@ namespace AnalizadorLexico
             this.label1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
             this.label1.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
-            this.label1.Location = new System.Drawing.Point(1, 9);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Location = new System.Drawing.Point(1, 7);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(504, 47);
+            this.label1.Size = new System.Drawing.Size(378, 38);
             this.label1.TabIndex = 5;
             this.label1.Text = "Archivo de Tokens";
             this.label1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -286,10 +271,9 @@ namespace AnalizadorLexico
             this.btnGuardarA.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnGuardarA.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGuardarA.ForeColor = System.Drawing.Color.White;
-            this.btnGuardarA.Location = new System.Drawing.Point(21, 217);
-            this.btnGuardarA.Margin = new System.Windows.Forms.Padding(4);
+            this.btnGuardarA.Location = new System.Drawing.Point(16, 176);
             this.btnGuardarA.Name = "btnGuardarA";
-            this.btnGuardarA.Size = new System.Drawing.Size(139, 46);
+            this.btnGuardarA.Size = new System.Drawing.Size(104, 37);
             this.btnGuardarA.TabIndex = 1;
             this.btnGuardarA.Text = "Guardar Archivo";
             this.btnGuardarA.UseVisualStyleBackColor = false;
@@ -300,11 +284,10 @@ namespace AnalizadorLexico
             this.rtbTokens.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
             this.rtbTokens.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.rtbTokens.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(50)))), ((int)(((byte)(70)))));
-            this.rtbTokens.Location = new System.Drawing.Point(21, 63);
-            this.rtbTokens.Margin = new System.Windows.Forms.Padding(4);
+            this.rtbTokens.Location = new System.Drawing.Point(16, 51);
             this.rtbTokens.Name = "rtbTokens";
             this.rtbTokens.ReadOnly = true;
-            this.rtbTokens.Size = new System.Drawing.Size(464, 144);
+            this.rtbTokens.Size = new System.Drawing.Size(348, 117);
             this.rtbTokens.TabIndex = 0;
             this.rtbTokens.Text = "";
             // 
@@ -312,11 +295,9 @@ namespace AnalizadorLexico
             // 
             this.groupBox4.Controls.Add(this.label3);
             this.groupBox4.Controls.Add(this.dgvSimbolos);
-            this.groupBox4.Location = new System.Drawing.Point(676, 430);
-            this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox4.Location = new System.Drawing.Point(507, 327);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox4.Size = new System.Drawing.Size(505, 217);
+            this.groupBox4.Size = new System.Drawing.Size(379, 176);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             // 
@@ -326,9 +307,8 @@ namespace AnalizadorLexico
             this.label3.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label3.Location = new System.Drawing.Point(1, -2);
-            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(504, 47);
+            this.label3.Size = new System.Drawing.Size(378, 38);
             this.label3.TabIndex = 6;
             this.label3.Text = "Tabla de símbolos";
             this.label3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -354,13 +334,12 @@ namespace AnalizadorLexico
             this.Column5,
             this.Column6});
             this.dgvSimbolos.EnableHeadersVisualStyles = false;
-            this.dgvSimbolos.Location = new System.Drawing.Point(17, 64);
-            this.dgvSimbolos.Margin = new System.Windows.Forms.Padding(4);
+            this.dgvSimbolos.Location = new System.Drawing.Point(13, 52);
             this.dgvSimbolos.Name = "dgvSimbolos";
             this.dgvSimbolos.ReadOnly = true;
             this.dgvSimbolos.RowHeadersVisible = false;
             this.dgvSimbolos.RowHeadersWidth = 51;
-            this.dgvSimbolos.Size = new System.Drawing.Size(468, 126);
+            this.dgvSimbolos.Size = new System.Drawing.Size(351, 102);
             this.dgvSimbolos.TabIndex = 0;
             this.dgvSimbolos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSimbolos_CellContentClick);
             // 
@@ -400,10 +379,9 @@ namespace AnalizadorLexico
             this.lblTitulo.AutoSize = true;
             this.lblTitulo.Font = new System.Drawing.Font("Segoe UI", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTitulo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
-            this.lblTitulo.Location = new System.Drawing.Point(28, 32);
-            this.lblTitulo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblTitulo.Location = new System.Drawing.Point(21, 26);
             this.lblTitulo.Name = "lblTitulo";
-            this.lblTitulo.Size = new System.Drawing.Size(578, 46);
+            this.lblTitulo.Size = new System.Drawing.Size(466, 37);
             this.lblTitulo.TabIndex = 4;
             this.lblTitulo.Text = "KaViGex Analizador Sintáctico v1.1";
             this.lblTitulo.Click += new System.EventHandler(this.lblTitulo_Click_1);
@@ -413,10 +391,9 @@ namespace AnalizadorLexico
             this.label4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(70)))), ((int)(((byte)(130)))));
             this.label4.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
             this.label4.ForeColor = System.Drawing.Color.White;
-            this.label4.Location = new System.Drawing.Point(543, 217);
-            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Location = new System.Drawing.Point(407, 176);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(125, 70);
+            this.label4.Size = new System.Drawing.Size(94, 57);
             this.label4.TabIndex = 5;
             this.label4.Text = "Sintaxis\r\nAnálisis";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -428,10 +405,10 @@ namespace AnalizadorLexico
             // 
             this.btnInfo.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.btnInfo.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnInfo.Location = new System.Drawing.Point(12, 12);
-            this.btnInfo.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnInfo.Location = new System.Drawing.Point(9, 10);
+            this.btnInfo.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnInfo.Name = "btnInfo";
-            this.btnInfo.Size = new System.Drawing.Size(29, 28);
+            this.btnInfo.Size = new System.Drawing.Size(22, 23);
             this.btnInfo.TabIndex = 6;
             this.btnInfo.Text = "?";
             this.btnInfo.UseVisualStyleBackColor = true;
@@ -441,10 +418,9 @@ namespace AnalizadorLexico
             // 
             this.pictureBox1.Image = global::AnalizadorSintactico.Properties.Resources.Logo;
             this.pictureBox1.InitialImage = null;
-            this.pictureBox1.Location = new System.Drawing.Point(871, 15);
-            this.pictureBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.pictureBox1.Location = new System.Drawing.Point(653, 12);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(311, 82);
+            this.pictureBox1.Size = new System.Drawing.Size(233, 67);
             this.pictureBox1.TabIndex = 5;
             this.pictureBox1.TabStop = false;
             // 
@@ -452,11 +428,9 @@ namespace AnalizadorLexico
             // 
             this.groupBox5.Controls.Add(this.label5);
             this.groupBox5.Controls.Add(this.dgvErroresSintacticos);
-            this.groupBox5.Location = new System.Drawing.Point(29, 670);
-            this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox5.Location = new System.Drawing.Point(22, 513);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(505, 217);
+            this.groupBox5.Size = new System.Drawing.Size(379, 176);
             this.groupBox5.TabIndex = 6;
             this.groupBox5.TabStop = false;
             // 
@@ -466,9 +440,8 @@ namespace AnalizadorLexico
             this.label5.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label5.Location = new System.Drawing.Point(0, 0);
-            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(505, 47);
+            this.label5.Size = new System.Drawing.Size(379, 38);
             this.label5.TabIndex = 5;
             this.label5.Text = "Errores Sintácticos";
             this.label5.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -493,13 +466,12 @@ namespace AnalizadorLexico
             this.dataGridViewTextBoxColumn1,
             this.dataGridViewTextBoxColumn2});
             this.dgvErroresSintacticos.EnableHeadersVisualStyles = false;
-            this.dgvErroresSintacticos.Location = new System.Drawing.Point(17, 64);
-            this.dgvErroresSintacticos.Margin = new System.Windows.Forms.Padding(4);
+            this.dgvErroresSintacticos.Location = new System.Drawing.Point(13, 52);
             this.dgvErroresSintacticos.Name = "dgvErroresSintacticos";
             this.dgvErroresSintacticos.ReadOnly = true;
             this.dgvErroresSintacticos.RowHeadersVisible = false;
             this.dgvErroresSintacticos.RowHeadersWidth = 51;
-            this.dgvErroresSintacticos.Size = new System.Drawing.Size(467, 126);
+            this.dgvErroresSintacticos.Size = new System.Drawing.Size(350, 102);
             this.dgvErroresSintacticos.TabIndex = 0;
             this.dgvErroresSintacticos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvErroresSintacticos_CellContentClick);
             // 
@@ -523,11 +495,9 @@ namespace AnalizadorLexico
             // 
             this.groupBox6.Controls.Add(this.rtSintaxis);
             this.groupBox6.Controls.Add(this.label6);
-            this.groupBox6.Location = new System.Drawing.Point(676, 670);
-            this.groupBox6.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox6.Location = new System.Drawing.Point(507, 513);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox6.Size = new System.Drawing.Size(505, 217);
+            this.groupBox6.Size = new System.Drawing.Size(379, 176);
             this.groupBox6.TabIndex = 7;
             this.groupBox6.TabStop = false;
             // 
@@ -536,11 +506,10 @@ namespace AnalizadorLexico
             this.rtSintaxis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
             this.rtSintaxis.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.rtSintaxis.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(50)))), ((int)(((byte)(70)))));
-            this.rtSintaxis.Location = new System.Drawing.Point(0, 46);
-            this.rtSintaxis.Margin = new System.Windows.Forms.Padding(4);
+            this.rtSintaxis.Location = new System.Drawing.Point(0, 37);
             this.rtSintaxis.Name = "rtSintaxis";
             this.rtSintaxis.ReadOnly = true;
-            this.rtSintaxis.Size = new System.Drawing.Size(505, 171);
+            this.rtSintaxis.Size = new System.Drawing.Size(379, 139);
             this.rtSintaxis.TabIndex = 6;
             this.rtSintaxis.Text = "";
             this.rtSintaxis.TextChanged += new System.EventHandler(this.rtSintaxis_TextChanged);
@@ -551,19 +520,19 @@ namespace AnalizadorLexico
             this.label6.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label6.Location = new System.Drawing.Point(1, -2);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(504, 47);
+            this.label6.Size = new System.Drawing.Size(378, 38);
             this.label6.TabIndex = 6;
             this.label6.Text = "Sintaxis";
             this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(244)))), ((int)(((byte)(248)))));
-            this.ClientSize = new System.Drawing.Size(1216, 900);
+            this.ClientSize = new System.Drawing.Size(928, 749);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.btnInfo);
@@ -575,7 +544,7 @@ namespace AnalizadorLexico
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "Form1";
             this.Text = "KaViGex Analizador Sintáctico v1.1";
             this.Load += new System.EventHandler(this.Form1_Load);

@@ -11,7 +11,7 @@ namespace AnalizadorLexico
     public class LexerDB
     {
         private DataTable _matriz;
-        private readonly string _connectionString = "Server=localhost;Database=LyA;User Id=sa;Password=17012005;";
+        private readonly string _connectionString = "Server=localhost;Database=LyA;User Id=sa;Password=valeria04;";
         private string _initErrorMessage = string.Empty;
         private readonly string _logFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "matriz_init_error.log");
 
