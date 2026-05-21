@@ -619,15 +619,22 @@ namespace AnalizadorLexico
             if (!Match("ASI")) return; // =
 
             // Consumir la expresión completa hasta ;
+            bool encontroPuntoComa = false;
             while (!EsEOF() && TipoActual() != "CE13")
             {
                 NextToken();
             }
 
-            // Intentar consumir el ; si está presente
-            if (TipoActual() == "CE13")
+            // Validar que haya ; al final
+            if (!EsEOF() && TipoActual() == "CE13")
             {
+                encontroPuntoComa = true;
                 NextToken();
+            }
+
+            if (!encontroPuntoComa)
+            {
+                Error($"Se esperaba ';' después de la expresión en asignación de {varName}");
             }
 
             EscribirSintaxis($"asignación {varName} = <expresión>");
@@ -717,15 +724,22 @@ namespace AnalizadorLexico
             if (!Match("PR20")) return; // VAR
 
             // Consumir identificadores hasta ;
+            bool encontroPuntoComa = false;
             while (!EsEOF() && TipoActual() != "CE13")
             {
                 NextToken();
             }
 
-            // Intentar consumir el ; si está presente
-            if (TipoActual() == "CE13")
+            // Validar que haya ; al final
+            if (!EsEOF() && TipoActual() == "CE13")
             {
+                encontroPuntoComa = true;
                 NextToken();
+            }
+
+            if (!encontroPuntoComa)
+            {
+                Error("Se esperaba ';' después de la declaración de variable");
             }
 
             EscribirSintaxis("declaración var <identificador>");
@@ -1106,10 +1120,27 @@ namespace AnalizadorLexico
         {
             if (!Match("PR5")) return; // SI
 
-            // Consumir condición hasta ENTONCES
+            // Validar que la condición tenga paréntesis de apertura
+            if (TipoActual() != "CE7") // (
+            {
+                Error("Se esperaba '(' después de SI para la condición");
+            }
+
+            // Consumir condición hasta ENTONCES, verificando paréntesis de cierre
+            bool encontroParentesisCierre = false;
             while (!EsEOF() && TipoActual() != "PR6")
             {
+                if (TipoActual() == "CE8") // )
+                {
+                    encontroParentesisCierre = true;
+                }
                 NextToken();
+            }
+
+            // Validar que se haya encontrado paréntesis de cierre
+            if (!encontroParentesisCierre)
+            {
+                Error("Se esperaba ')' al final de la condición en SI");
             }
 
             EscribirSintaxis("si <condición> entonces");
