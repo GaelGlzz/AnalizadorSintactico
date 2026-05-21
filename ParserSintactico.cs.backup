@@ -1,0 +1,979 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace AnalizadorLexico
+{
+    /// <summary>
+    /// Parser Sintáctico Recursivo Descendente Predictivo (Top-Down) para KaViGex
+    /// Implementa la gramática LL(1) refactorizada
+    /// </summary>
+    public class ParserSintactico
+    {
+        #region Clases y Estructuras Internas
+
+        public class TokenSintactico
+        {
+            public string Tipo { get; set; }
+            public string Valor { get; set; }
+            public int Linea { get; set; }
+
+            public override string ToString()
+            {
+                return $"{Tipo}({Valor})";
+            }
+        }
+
+        public class ErrorSintactico
+        {
+            public int Linea { get; set; }
+            public string Mensaje { get; set; }
+            public string TokenEsperado { get; set; }
+            public string TokenEncontrado { get; set; }
+        }
+
+        #endregion
+
+        #region Propiedades Privadas
+
+        private List<TokenSintactico> tokens;
+        private int puntero = 0;
+        private List<ErrorSintactico> errores;
+        private StringBuilder sintaxisDetectada;
+        private int indentacion = 0;
+        private const string INDENT = "  ";
+
+        #endregion
+
+        #region Constructor
+
+        public ParserSintactico(List<TokenSintactico> tokensDelLexer)
+        {
+            tokens = tokensDelLexer ?? new List<TokenSintactico>();
+            errores = new List<ErrorSintactico>();
+            sintaxisDetectada = new StringBuilder();
+        }
+
+        #endregion
+
+        #region Propiedades Públicas
+
+        public List<ErrorSintactico> Errores => errores;
+        public string SintaxisDetectada => sintaxisDetectada.ToString();
+        public bool TieneErrores => errores.Count > 0;
+
+        #endregion
+
+        #region Métodos Públicos de Control
+
+        /// <summary>
+        /// Inicia el análisis sintáctico desde el símbolo inicial S
+        /// </summary>
+        public bool Analizar()
+        {
+            try
+            {
+                puntero = 0;
+                errores.Clear();
+                sintaxisDetectada.Clear();
+                indentacion = 0;
+
+                ParseS();
+
+                // Verificar que llegamos al final
+                if (!EsEOF())
+                {
+                    ReportarError("Se esperaba fin del programa", TokenActual().Tipo);
+                }
+
+                return !TieneErrores;
+            }
+            catch (Exception ex)
+            {
+                ReportarErrorCritico($"Error crítico: {ex.Message}");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Métodos Auxiliares Privados
+
+        /// <summary>
+        /// Obtiene el token actual sin avanzar
+        /// </summary>
+        private TokenSintactico TokenActual()
+        {
+            if (puntero < tokens.Count)
+                return tokens[puntero];
+            return new TokenSintactico { Tipo = "EOF", Valor = "", Linea = 0 };
+        }
+
+        /// <summary>
+        /// Obtiene el tipo del token actual
+        /// </summary>
+        private string TipoActual()
+        {
+            return TokenActual().Tipo;
+        }
+
+        /// <summary>
+        /// Obtiene el token siguiente sin avanzar
+        /// </summary>
+        private TokenSintactico TokenSiguiente()
+        {
+            if (puntero + 1 < tokens.Count)
+                return tokens[puntero + 1];
+            return new TokenSintactico { Tipo = "EOF", Valor = "", Linea = 0 };
+        }
+
+        /// <summary>
+        /// Verifica si se ha llegado al final del archivo
+        /// </summary>
+        private bool EsEOF()
+        {
+            return puntero >= tokens.Count || TipoActual() == "EOF";
+        }
+
+        /// <summary>
+        /// Avanza al siguiente token
+        /// </summary>
+        private void Avanzar()
+        {
+            puntero++;
+        }
+
+        /// <summary>
+        /// Intenta emparejar un tipo de token esperado
+        /// </summary>
+        private bool Emparejar(string tipoEsperado)
+        {
+            if (TipoActual() == tipoEsperado)
+            {
+                Avanzar();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Consume un token esperado o reporta error
+        /// </summary>
+        private bool Match(string tipoEsperado)
+        {
+            if (TipoActual() == tipoEsperado)
+            {
+                Avanzar();
+                return true;
+            }
+            else
+            {
+                ReportarError($"Se esperaba {tipoEsperado}", TipoActual());
+                RecuperarDelError();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Sincroniza después de un error
+        /// </summary>
+        private void RecuperarDelError()
+        {
+            // Saltar tokens hasta encontrar un sincronizador
+            while (!EsEOF() && TipoActual() != "CE13" && TipoActual() != "PR2")
+            {
+                Avanzar();
+            }
+
+            // Consumir el sincronizador
+            if (TipoActual() == "CE13" || TipoActual() == "PR2")
+            {
+                Avanzar();
+            }
+        }
+
+        /// <summary>
+        /// Registra un error sintáctico
+        /// </summary>
+        private void ReportarError(string mensaje, string tokenEncontrado)
+        {
+            errores.Add(new ErrorSintactico
+            {
+                Linea = TokenActual().Linea,
+                Mensaje = mensaje,
+                TokenEncontrado = tokenEncontrado
+            });
+        }
+
+        /// <summary>
+        /// Registra un error crítico
+        /// </summary>
+        private void ReportarErrorCritico(string mensaje)
+        {
+            errores.Add(new ErrorSintactico
+            {
+                Linea = TokenActual().Linea,
+                Mensaje = mensaje,
+                TokenEncontrado = "CRÍTICO"
+            });
+        }
+
+        /// <summary>
+        /// Agrega una línea a la sintaxis detectada con indentación
+        /// </summary>
+        private void AgregarSintaxis(string linea)
+        {
+            sintaxisDetectada.AppendLine(new string(' ', indentacion * 2) + linea);
+        }
+
+        #endregion
+
+        #region Funciones de Parseo - Símbolo Inicial y Auxiliares
+
+        /// <summary>
+        /// S ? PR1 L_INSTR PR2 CE13
+        /// </summary>
+        private void ParseS()
+        {
+            AgregarSintaxis("=== INICIO DEL PROGRAMA ===");
+
+            if (!Match("PR1")) return;
+            AgregarSintaxis("[INICIO]");
+
+            ParseL_INSTR();
+
+            if (!Match("PR2")) return;
+            AgregarSintaxis("[FIN]");
+
+            if (!Match("CE13")) return;
+
+            AgregarSintaxis("=== FIN DEL PROGRAMA ===");
+        }
+
+        /// <summary>
+        /// L_INSTR ? INSTR L_INSTR | ?
+        /// </summary>
+        private void ParseL_INSTR()
+        {
+            while (TipoActual() != "PR2" && TipoActual() != "EOF" && !EsEOF())
+            {
+                try
+                {
+                    ParseINSTR();
+                }
+                catch (Exception)
+                {
+                    RecuperarDelError();
+                }
+            }
+        }
+
+        /// <summary>
+        /// INSTR ? ASIG | LEER | MOSTRAR | SI | DESDE | PARA | MIENTRAS
+        ///       | REPETIR | ROMPER | LIMP | IR | ESCRIBIR | FUNCION
+        ///       | RETORNAR | VAR | NUEVO
+        /// </summary>
+        private void ParseINSTR()
+        {
+            if (EsEOF() || TipoActual() == "PR2")
+                return;
+
+            string tipo = TipoActual();
+
+            switch (tipo)
+            {
+                case "IDENT":
+                    ParseASIG();
+                    break;
+                case "PR3":
+                    ParseLEER();
+                    break;
+                case "PR4":
+                    ParseMOSTRAR();
+                    break;
+                case "PR5":
+                    ParseSI();
+                    break;
+                case "PR8":
+                    ParseDESDE();
+                    break;
+                case "PR12":
+                    ParsePARA();
+                    break;
+                case "PR14":
+                    ParseMIENTRAS();
+                    break;
+                case "PR10":
+                    ParseREPETIR();
+                    break;
+                case "PR11":
+                    ParseROMPER();
+                    break;
+                case "PR15":
+                    ParseLIMP();
+                    break;
+                case "PR16":
+                    ParseIR();
+                    break;
+                case "PR17":
+                    ParseESCRIBIR();
+                    break;
+                case "PR18":
+                    ParseFUNCION();
+                    break;
+                case "PR19":
+                    ParseRETORNAR();
+                    break;
+                case "PR20":
+                    ParseVAR();
+                    break;
+                case "PR21":
+                    ParseNUEVO();
+                    break;
+                default:
+                    ReportarError($"Se esperaba instrucción, encontrado {tipo}", tipo);
+                    RecuperarDelError();
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Funciones de Parseo - Instrucciones Principales
+
+        /// <summary>
+        /// ASIG ? IDENT ASI EXP CE13
+        /// </summary>
+        private void ParseASIG()
+        {
+            AgregarSintaxis("ASIGNAR:");
+            indentacion++;
+
+            if (!Match("IDENT")) return;
+            if (!Match("ASI")) return;
+
+            ParseEXP();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// LEER ? PR3 ARG L_ARG2_LEER CE13
+        /// L_ARG2_LEER ? CE16 ARG L_ARG2_LEER | ?
+        /// </summary>
+        private void ParseLEER()
+        {
+            AgregarSintaxis("LEER:");
+            indentacion++;
+
+            if (!Match("PR3")) return;
+
+            ParseARG();
+            ParseL_ARG2_LEER();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseL_ARG2_LEER()
+        {
+            while (Emparejar("CE16"))
+            {
+                ParseARG();
+            }
+        }
+
+        /// <summary>
+        /// MOSTRAR ? PR4 ARG2 L_ARG2_MOSTRAR CE13
+        /// L_ARG2_MOSTRAR ? CE16 ARG2 L_ARG2_MOSTRAR | ?
+        /// </summary>
+        private void ParseMOSTRAR()
+        {
+            AgregarSintaxis("MOSTRAR:");
+            indentacion++;
+
+            if (!Match("PR4")) return;
+
+            ParseARG2();
+            ParseL_ARG2_MOSTRAR();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseL_ARG2_MOSTRAR()
+        {
+            while (Emparejar("CE16"))
+            {
+                ParseARG2();
+            }
+        }
+
+        /// <summary>
+        /// SI ? PR5 CONDICION PR6 L_INSTR SINO_OPC PR2 CE13
+        /// SINO_OPC ? PR7 L_INSTR | ?
+        /// </summary>
+        private void ParseSI()
+        {
+            AgregarSintaxis("SI <CONDICION> ENTONCES:");
+            indentacion++;
+
+            if (!Match("PR5")) return;
+
+            ParseCONDICION();
+
+            if (!Match("PR6")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            ParseSINO_OPC();
+
+            if (!Match("PR2")) return;
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseSINO_OPC()
+        {
+            if (Emparejar("PR7"))
+            {
+                AgregarSintaxis("SINO:");
+                indentacion++;
+                ParseL_INSTR();
+                indentacion--;
+            }
+        }
+
+        /// <summary>
+        /// DESDE ? PR8 IDENT ASI ARG3 PR9 ARG3 PR13 L_INSTR PR2 CE13
+        /// </summary>
+        private void ParseDESDE()
+        {
+            AgregarSintaxis("DESDE <IDENT> DESDE <VALOR> HASTA <VALOR> HACER:");
+            indentacion++;
+
+            if (!Match("PR8")) return;
+            if (!Match("IDENT")) return;
+            if (!Match("ASI")) return;
+
+            ParseARG3();
+
+            if (!Match("PR9")) return;
+
+            ParseARG3();
+
+            if (!Match("PR13")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            if (!Match("PR2")) return;
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// PARA ? PR12 IDENT ASI ARG3 PR9 ARG3 PR13 L_INSTR PR2 CE13
+        /// </summary>
+        private void ParsePARA()
+        {
+            AgregarSintaxis("PARA <IDENT> DESDE <VALOR> HASTA <VALOR> HACER:");
+            indentacion++;
+
+            if (!Match("PR12")) return;
+            if (!Match("IDENT")) return;
+            if (!Match("ASI")) return;
+
+            ParseARG3();
+
+            if (!Match("PR9")) return;
+
+            ParseARG3();
+
+            if (!Match("PR13")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            if (!Match("PR2")) return;
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// MIENTRAS ? PR14 CONDICION PR13 L_INSTR PR2 CE13
+        /// </summary>
+        private void ParseMIENTRAS()
+        {
+            AgregarSintaxis("MIENTRAS <CONDICION> HACER:");
+            indentacion++;
+
+            if (!Match("PR14")) return;
+
+            ParseCONDICION();
+
+            if (!Match("PR13")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            if (!Match("PR2")) return;
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// REPETIR ? PR10 L_INSTR PR14 CONDICION CE13
+        /// </summary>
+        private void ParseREPETIR()
+        {
+            AgregarSintaxis("REPETIR:");
+            indentacion++;
+
+            if (!Match("PR10")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            if (!Match("PR14")) return;
+
+            AgregarSintaxis("MIENTRAS <CONDICION>");
+
+            ParseCONDICION();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// ROMPER ? PR11 CE13
+        /// </summary>
+        private void ParseROMPER()
+        {
+            AgregarSintaxis("ROMPER (BREAK)");
+
+            if (!Match("PR11")) return;
+            if (!Match("CE13")) return;
+        }
+
+        /// <summary>
+        /// LIMP ? PR15 CE13
+        /// </summary>
+        private void ParseLIMP()
+        {
+            AgregarSintaxis("LIMPIAR PANTALLA");
+
+            if (!Match("PR15")) return;
+            if (!Match("CE13")) return;
+        }
+
+        /// <summary>
+        /// IR ? PR16 ARG4 CE13
+        /// ARG4 ? CE7 ARG5 CE16 ARG5 CE8
+        /// ARG5 ? IDENT | CNU
+        /// </summary>
+        private void ParseIR()
+        {
+            AgregarSintaxis("IR A POSICION (X, Y)");
+            indentacion++;
+
+            if (!Match("PR16")) return;
+
+            if (!Match("CE7")) return;
+
+            ParseARG5();
+
+            if (!Match("CE16")) return;
+
+            ParseARG5();
+
+            if (!Match("CE8")) return;
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseARG5()
+        {
+            if (TipoActual() == "IDENT")
+            {
+                Avanzar();
+            }
+            else if (TipoActual() == "CNU")
+            {
+                Avanzar();
+            }
+            else
+            {
+                ReportarError("Se esperaba IDENT o CNU", TipoActual());
+            }
+        }
+
+        /// <summary>
+        /// ESCRIBIR ? PR17 ARG4 CE16 ARG2 CE13
+        /// </summary>
+        private void ParseESCRIBIR()
+        {
+            AgregarSintaxis("ESCRIBIR EN POSICION (X, Y):");
+            indentacion++;
+
+            if (!Match("PR17")) return;
+
+            if (!Match("CE7")) return;
+            ParseARG5();
+            if (!Match("CE16")) return;
+            ParseARG5();
+            if (!Match("CE8")) return;
+
+            if (!Match("CE16")) return;
+
+            ParseARG2();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        /// <summary>
+        /// FUNCION ? PR18 IDENT ARG6 ARG7 CE13
+        /// ARG6 ? CE7 L_PARAMS CE8
+        /// L_PARAMS ? IDENT L_PARAMS_R | ?
+        /// L_PARAMS_R ? CE16 IDENT L_PARAMS_R | ?
+        /// ARG7 ? CE9 L_INSTR CE10
+        /// </summary>
+        private void ParseFUNCION()
+        {
+            AgregarSintaxis("FUNCION <NOMBRE> (<PARAMETROS>):");
+            indentacion++;
+
+            if (!Match("PR18")) return;
+            if (!Match("IDENT")) return;
+
+            if (!Match("CE7")) return;
+            ParseL_PARAMS();
+            if (!Match("CE8")) return;
+
+            if (!Match("CE9")) return;
+
+            indentacion++;
+            ParseL_INSTR();
+            indentacion--;
+
+            if (!Match("CE10")) return;
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseL_PARAMS()
+        {
+            if (TipoActual() == "IDENT")
+            {
+                Avanzar();
+                ParseL_PARAMS_R();
+            }
+        }
+
+        private void ParseL_PARAMS_R()
+        {
+            while (Emparejar("CE16"))
+            {
+                if (!Match("IDENT")) return;
+            }
+        }
+
+        /// <summary>
+        /// RETORNAR ? PR19 ARG8 CE13 | PR19 CE13
+        /// ARG8 ? CE7 IDENT CE8
+        /// </summary>
+        private void ParseRETORNAR()
+        {
+            AgregarSintaxis("RETORNAR [<VALOR>]");
+
+            if (!Match("PR19")) return;
+
+            if (TipoActual() == "CE7")
+            {
+                if (!Match("CE7")) return;
+                if (!Match("IDENT")) return;
+                if (!Match("CE8")) return;
+            }
+
+            if (!Match("CE13")) return;
+        }
+
+        /// <summary>
+        /// VAR ? PR20 IDENT L_VAR CE13
+        /// L_VAR ? CE16 IDENT L_VAR | ?
+        /// </summary>
+        private void ParseVAR()
+        {
+            AgregarSintaxis("DECLARAR VARIABLE(S):");
+            indentacion++;
+
+            if (!Match("PR20")) return;
+            if (!Match("IDENT")) return;
+
+            ParseL_VAR();
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        private void ParseL_VAR()
+        {
+            while (Emparejar("CE16"))
+            {
+                if (!Match("IDENT")) return;
+            }
+        }
+
+        /// <summary>
+        /// NUEVO ? PR21 IDENT CE7 L_ARG2_MOSTRAR CE8 CE13
+        /// </summary>
+        private void ParseNUEVO()
+        {
+            AgregarSintaxis("CREAR INSTANCIA <CLASE>(<ARGUMENTOS>)");
+            indentacion++;
+
+            if (!Match("PR21")) return;
+            if (!Match("IDENT")) return;
+
+            if (!Match("CE7")) return;
+            ParseL_ARG2_MOSTRAR();
+            if (!Match("CE8")) return;
+
+            if (!Match("CE13")) return;
+
+            indentacion--;
+        }
+
+        #endregion
+
+        #region Funciones de Parseo - Expresiones y Argumentos
+
+        /// <summary>
+        /// ARG ? IDENT
+        /// </summary>
+        private void ParseARG()
+        {
+            if (!Match("IDENT")) return;
+        }
+
+        /// <summary>
+        /// ARG2 ? IDENT | CNU | CAD | EXP
+        /// </summary>
+        private void ParseARG2()
+        {
+            string tipo = TipoActual();
+
+            if (tipo == "IDENT" || tipo == "CNU" || tipo == "CAD")
+            {
+                Avanzar();
+            }
+            else
+            {
+                ParseEXP();
+            }
+        }
+
+        /// <summary>
+        /// ARG3 ? IDENT | CNU | EXP
+        /// </summary>
+        private void ParseARG3()
+        {
+            string tipo = TipoActual();
+
+            if (tipo == "IDENT" || tipo == "CNU")
+            {
+                Avanzar();
+            }
+            else
+            {
+                ParseEXP();
+            }
+        }
+
+        /// <summary>
+        /// EXP ? TERM EXP_TAIL
+        /// EXP_TAIL ? OA1 TERM EXP_TAIL | OA2 TERM EXP_TAIL | ?
+        /// </summary>
+        private void ParseEXP()
+        {
+            ParseTERM();
+            ParseEXP_TAIL();
+        }
+
+        private void ParseEXP_TAIL()
+        {
+            while (TipoActual() == "OA1" || TipoActual() == "OA2")
+            {
+                string operador = TipoActual();
+                Avanzar();
+                AgregarSintaxis($"operador: {operador}");
+                ParseTERM();
+            }
+        }
+
+        /// <summary>
+        /// TERM ? FACTOR TERM_TAIL
+        /// TERM_TAIL ? OA3 FACTOR TERM_TAIL | OA4 FACTOR TERM_TAIL | ?
+        /// </summary>
+        private void ParseTERM()
+        {
+            ParseFACTOR();
+            ParseTERM_TAIL();
+        }
+
+        private void ParseTERM_TAIL()
+        {
+            while (TipoActual() == "OA3" || TipoActual() == "OA4")
+            {
+                string operador = TipoActual();
+                Avanzar();
+                AgregarSintaxis($"operador: {operador}");
+                ParseFACTOR();
+            }
+        }
+
+        /// <summary>
+        /// FACTOR ? CE7 EXP CE8 | IDENT | CNU | CAD | PR21 IDENT CE7 L_ARG2_MOSTRAR CE8
+        /// </summary>
+        private void ParseFACTOR()
+        {
+            if (TipoActual() == "CE7")
+            {
+                Avanzar();
+                ParseEXP();
+                Match("CE8");
+            }
+            else if (TipoActual() == "IDENT" || TipoActual() == "CNU" || TipoActual() == "CAD")
+            {
+                Avanzar();
+            }
+            else if (TipoActual() == "PR21")
+            {
+                Avanzar();
+                if (!Match("IDENT")) return;
+                if (!Match("CE7")) return;
+                ParseL_ARG2_MOSTRAR();
+                if (!Match("CE8")) return;
+            }
+            else
+            {
+                ReportarError("Se esperaba FACTOR (IDENT, CNU, CAD, o expresión entre paréntesis)", TipoActual());
+            }
+        }
+
+        /// <summary>
+        /// CONDICION ? COND_T CONDICION_TAIL
+        /// CONDICION_TAIL ? OPL1 COND_T CONDICION_TAIL | OPL2 COND_T CONDICION_TAIL | ?
+        /// </summary>
+        private void ParseCONDICION()
+        {
+            ParseCOND_T();
+            ParseCONDICION_TAIL();
+        }
+
+        private void ParseCONDICION_TAIL()
+        {
+            while (TipoActual() == "OPL1" || TipoActual() == "OPL2")
+            {
+                string operador = TipoActual();
+                Avanzar();
+                AgregarSintaxis($"operador lógico: {operador}");
+                ParseCOND_T();
+            }
+        }
+
+        /// <summary>
+        /// COND_T ? OPL3 COND_F | COND_F
+        /// </summary>
+        private void ParseCOND_T()
+        {
+            if (Emparejar("OPL3"))
+            {
+                AgregarSintaxis("NO");
+                ParseCOND_F();
+            }
+            else
+            {
+                ParseCOND_F();
+            }
+        }
+
+        /// <summary>
+        /// COND_F ? CE7 CONDICION CE8 | COMP
+        /// </summary>
+        private void ParseCOND_F()
+        {
+            if (TipoActual() == "CE7")
+            {
+                Avanzar();
+                ParseCONDICION();
+                Match("CE8");
+            }
+            else
+            {
+                ParseCOMP();
+            }
+        }
+
+        /// <summary>
+        /// COMP ? VALOR OPR VALOR
+        /// </summary>
+        private void ParseCOMP()
+        {
+            ParseVALOR();
+
+            if (TipoActual() == "OR1" || TipoActual() == "OR2" || TipoActual() == "OR3"
+                || TipoActual() == "OR4" || TipoActual() == "OR5" || TipoActual() == "OR6")
+            {
+                string operador = TipoActual();
+                Avanzar();
+                AgregarSintaxis($"comparar con: {operador}");
+                ParseVALOR();
+            }
+            else
+            {
+                ReportarError("Se esperaba operador relacional (OR1-OR6)", TipoActual());
+            }
+        }
+
+        /// <summary>
+        /// VALOR ? IDENT | CNU | CAD
+        /// </summary>
+        private void ParseVALOR()
+        {
+            if (TipoActual() == "IDENT" || TipoActual() == "CNU" || TipoActual() == "CAD")
+            {
+                Avanzar();
+            }
+            else
+            {
+                ReportarError("Se esperaba valor (IDENT, CNU o CAD)", TipoActual());
+            }
+        }
+
+        #endregion
+    }
+}

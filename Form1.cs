@@ -15,6 +15,7 @@ namespace AnalizadorLexico
         private Lexer lexer;
         private LexerDB lexerDB;
         private List<Simbolo> tablaSimbolos = new List<Simbolo>();
+        private List<Token> tokensLexico = new List<Token>();
 
         public Form1()
         {
@@ -30,6 +31,11 @@ namespace AnalizadorLexico
 
             // Crear botón léxico en runtime (label4 actúa como indicador, creamos click)
             label4.Click += label4_Click;
+
+            // Crear botón sintáctico en runtime (label5 actúa como indicador, creamos click)
+            label5.Click += label5_Click;
+            label5.MouseEnter += label5_MouseEnter;
+            label5.MouseLeave += label5_MouseLeave;
 
             // Manejar Tab en rtbFuente para insertar 5 espacios
             rtbFuente.KeyDown += RtbFuente_KeyDown;
@@ -164,6 +170,8 @@ namespace AnalizadorLexico
             dgvErrores.Rows.Clear();
             dgvSimbolos.Rows.Clear();
             tablaSimbolos.Clear();
+            dgvErroresSintacticos.Rows.Clear();
+            rtSintaxis.Clear();
         }
 
         // Guardar Programa Fuente
@@ -205,6 +213,31 @@ namespace AnalizadorLexico
             }
 
             EjecutarLexico();
+
+            // Verificar si hay errores léxicos
+            if (dgvErrores.Rows.Count > 0)
+            {
+                // Hay errores léxicos: deshabilitar btnGuardarA, limpiar errores sintácticos y rtSintaxis
+                btnGuardarA.Enabled = false;
+                dgvErroresSintacticos.Rows.Clear();
+                rtSintaxis.Clear();
+                MessageBox.Show("Se encontraron errores léxicos. No se puede ejecutar el análisis sintáctico.", "Errores Léxicos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                // No hay errores léxicos: ejecutar análisis sintáctico
+                btnGuardarA.Enabled = true;
+                bool hayErroresSintacticos = EjecutarSintactico();
+
+                if (hayErroresSintacticos)
+                {
+                    MessageBox.Show("Se encontraron errores en la sintaxis.", "Errores Sintácticos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("No se encontraron errores en la sintaxis.", "Análisis Sintáctico", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
         }
 
         private void EjecutarLexico()
@@ -213,6 +246,7 @@ namespace AnalizadorLexico
             dgvErrores.Rows.Clear();
             dgvSimbolos.Rows.Clear();
             tablaSimbolos.Clear();
+            tokensLexico.Clear();
 
             // Limpiar y preparar dgvErrores: solo dos columnas (Linea, Error)
             //dgvErrores.Columns.Clear();
@@ -245,6 +279,11 @@ namespace AnalizadorLexico
                         token = new Token { Lexema = lex, Estado = -1, Categoria = "ERROR: Excepción durante análisis: " + ex.Message, EsError = true };
                     }
 
+                    // Almacenar el token con su número de línea
+                    token.Lexema = lex; // Asegurar que el lexema se guarde correctamente
+                    // Usamos una propiedad personalizada para guardar la línea
+                    // Como Token no tiene propiedad de línea, la guardaremos en una lista paralela
+
                     if(token.EsError)
                     {
                         // Agregar a errores: solo Linea y Error (sin lexema en columna separada)
@@ -261,6 +300,9 @@ namespace AnalizadorLexico
                     }
                     else
                     {
+                        // Guardar token válido para el análisis sintáctico
+                        tokensLexico.Add(token);
+
                         // 1. Aseguramos que el símbolo esté en la tabla y obtenemos su referencia
                         lexerDB.ActualizarTablaSimbolos(token, tablaSimbolos);
 
@@ -432,6 +474,211 @@ namespace AnalizadorLexico
         {
             //label4.ForeColor = Color.White;
             label4.BackColor = Color.FromArgb(25, 70, 130);
+        }
+
+        // Click en label5 (ejecuta Sintáctico)
+        private void label5_Click(object sender, EventArgs e)
+        {
+            if (!lexerDB.IsMatrizLoaded())
+            {
+                MessageBox.Show("La matriz de transición no está disponible. Verifica la conexión a la base de datos.", "Error BD", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            EjecutarSintactico();
+        }
+
+        private bool EjecutarSintactico()
+        {
+            // Primero ejecutar el léxico si no se ha hecho
+            if (string.IsNullOrEmpty(rtbTokens.Text) || rtbTokens.Text.Trim() == "")
+            {
+                EjecutarLexico();
+            }
+
+            // Convertir tokens del lexer a TokenSintactico usando los tokens almacenados
+            List<ParserSintactico.TokenSintactico> tokensSintacticos = new List<ParserSintactico.TokenSintactico>();
+
+            // Obtener líneas sin números para calcular números de línea
+            string[] lines = RemoveLineNumbers(rtbFuente.Text).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            int tokenIndex = 0;
+            for (int lineaActual = 0; lineaActual < lines.Length; lineaActual++)
+            {
+                var lexemas = lexerDB.LeerCadena(lines[lineaActual]);
+                int numeroLinea = lineaActual + 1;
+
+                foreach (var lex in lexemas)
+                {
+                    if (tokenIndex < tokensLexico.Count)
+                    {
+                        Token token = tokensLexico[tokenIndex];
+                        if (!token.EsError)
+                        {
+                            // Determinar el tipo de token sintáctico
+                            string tipo = DeterminarTipoTokenDesdeCategoria(token.Categoria);
+                            tokensSintacticos.Add(new ParserSintactico.TokenSintactico
+                            {
+                                Tipo = tipo,
+                                Valor = token.Lexema,
+                                Linea = numeroLinea
+                            });
+                        }
+                        tokenIndex++;
+                    }
+                }
+            }
+
+            // Crear parser y ejecutar
+            ParserSintactico parser = new ParserSintactico(tokensSintacticos, dgvErroresSintacticos, rtSintaxis);
+            parser.Parse();
+
+            // Devolver true si hay errores sintácticos, false si no
+            return dgvErroresSintacticos.Rows.Count > 0;
+        }
+
+        private string DeterminarTipoTokenDesdeCategoria(string categoria)
+        {
+            // Mapeo de categorías del lexer a tipos sintácticos
+            switch (categoria)
+            {
+                case "IDENT": return "IDENT";
+                case "INICIO": return "PR1";
+                case "FIN": return "PR2";
+                case "LEER": return "PR3";
+                case "MOSTRAR": return "PR4";
+                case "SI": return "PR5";
+                case "ENTONCES": return "PR6";
+                case "SINO": return "PR7";
+                case "DESDE": return "PR8";
+                case "HASTA": return "PR9";
+                case "REPETIR": return "PR10";
+                case "ROMPER": return "PR11";
+                case "PARA": return "PR12";
+                case "HACER": return "PR13";
+                case "MIENTRAS": return "PR14";
+                case "LIMP": return "PR15";
+                case "IR": return "PR16";
+                case "ESCRIBIR": return "PR17";
+                case "FUNCION": return "PR18";
+                case "RETORNAR": return "PR19";
+                case "VAR": return "PR20";
+                case "NUEVO": return "PR21";
+                case "ASI": return "ASI";
+                case "OA1": return "OA1";
+                case "OA2": return "OA2";
+                case "OA3": return "OA3";
+                case "OA4": return "OA4";
+                case "OR1": return "OR1";
+                case "OR2": return "OR2";
+                case "OR3": return "OR3";
+                case "OR4": return "OR4";
+                case "OR5": return "OR5";
+                case "OR6": return "OR6";
+                case "DEL": return "CE13"; // ;
+                case "CE16": return "CE16"; // ,
+                case "CE7": return "CE7"; // (
+                case "CE8": return "CE8"; // )
+                case "CE9": return "CE9"; // {
+                case "CE10": return "CE10"; // }
+                case "CE11": return "CE11"; // :
+                case "CE12": return "CE12"; // "
+                case "CE14": return "CE14"; // ?
+                case "CE15": return "CE15"; // \
+                case "CE17": return "CE17"; // .
+                case "CE18": return "CE18"; // ~
+                case "CE19": return "CE19"; // [
+                case "CE20": return "CE20"; // ]
+                case "CE21": return "CE21"; // _
+                case "CE22": return "CE22"; // ¿
+                case "CE23": return "CE23"; // !
+                case "CN ENTEROS": return "CNU";
+                case "CN REALES": return "CNU";
+                case "CN CON EXPONENTE": return "CNU";
+                case "CAD": return "CAD";
+                case "COM": return "COMEN";
+                default: return categoria;
+            }
+        }
+
+        private string DeterminarTipoToken(string tokenStr)
+        {
+            // Mapeo de tokens léxicos a tipos sintácticos
+            if (tokenStr.StartsWith("IDENT")) return "IDENT";
+            if (tokenStr == "INICIO") return "PR1";
+            if (tokenStr == "FIN") return "PR2";
+            if (tokenStr == "LEER") return "PR3";
+            if (tokenStr == "MOSTRAR") return "PR4";
+            if (tokenStr == "SI") return "PR5";
+            if (tokenStr == "ENTONCES") return "PR6";
+            if (tokenStr == "SINO") return "PR7";
+            if (tokenStr == "DESDE") return "PR8";
+            if (tokenStr == "HASTA") return "PR9";
+            if (tokenStr == "REPETIR") return "PR10";
+            if (tokenStr == "ROMPER") return "PR11";
+            if (tokenStr == "PARA") return "PR12";
+            if (tokenStr == "HACER") return "PR13";
+            if (tokenStr == "MIENTRAS") return "PR14";
+            if (tokenStr == "LIMP") return "PR15";
+            if (tokenStr == "IR") return "PR16";
+            if (tokenStr == "ESCRIBIR") return "PR17";
+            if (tokenStr == "FUNCION") return "PR18";
+            if (tokenStr == "RETORNAR") return "PR19";
+            if (tokenStr == "VAR") return "PR20";
+            if (tokenStr == "NUEVO") return "PR21";
+            if (tokenStr == "ASI") return "ASI";
+            if (tokenStr == "OA1") return "OA1";
+            if (tokenStr == "OA2") return "OA2";
+            if (tokenStr == "OA3") return "OA3";
+            if (tokenStr == "OA4") return "OA4";
+            if (tokenStr == "OR1") return "OR1";
+            if (tokenStr == "OR2") return "OR2";
+            if (tokenStr == "OR3") return "OR3";
+            if (tokenStr == "OR4") return "OR4";
+            if (tokenStr == "OR5") return "OR5";
+            if (tokenStr == "OR6") return "OR6";
+            if (tokenStr == "CE7") return "CE7"; // (
+            if (tokenStr == "CE8") return "CE8"; // )
+            if (tokenStr == "CE9") return "CE9"; // {
+            if (tokenStr == "CE10") return "CE10"; // }
+            if (tokenStr == "CE13") return "CE13"; // ;
+            if (tokenStr == "CE16") return "CE16"; // ,
+            if (tokenStr.StartsWith("CN")) return "CNU";
+            if (tokenStr == "CAD") return "CAD";
+
+            // Por defecto, usar el mismo string como tipo
+            return tokenStr;
+        }
+
+        private void label5_MouseEnter(object sender, EventArgs e)
+        {
+            label5.Cursor = Cursors.Hand;
+            label5.BackColor = Color.FromArgb(187, 222, 251);
+        }
+
+        private void label5_MouseLeave(object sender, EventArgs e)
+        {
+            label5.BackColor = Color.FromArgb(25, 70, 130);
+        }
+
+        private void dgvErrores_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dgvSimbolos_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dgvErroresSintacticos_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void rtSintaxis_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
