@@ -575,6 +575,9 @@ namespace AnalizadorLexico
                 case "OR4": return "OR4";
                 case "OR5": return "OR5";
                 case "OR6": return "OR6";
+                case "Y": return "OPL1"; // operador lógico AND
+                case "O": return "OPL2"; // operador lógico OR
+                case "NO": return "OPL3"; // operador lógico NOT
                 case "DEL": return "CE13"; // ;
                 case "CE16": return "CE16"; // ,
                 case "CE7": return "CE7"; // (

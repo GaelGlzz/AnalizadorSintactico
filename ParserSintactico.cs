@@ -273,6 +273,23 @@ namespace AnalizadorLexico
             }
         }
 
+        // Registra un error en una línea específica (útil cuando el token actual ha avanzado)
+        private void ErrorEnLinea(string mensaje, int linea)
+        {
+            string errorCompleto = mensaje;
+            if (dgvErroresSintacticos != null && dgvErroresSintacticos.InvokeRequired)
+            {
+                dgvErroresSintacticos.Invoke(new Action(() =>
+                {
+                    dgvErroresSintacticos.Rows.Add(linea, errorCompleto);
+                }));
+            }
+            else if (dgvErroresSintacticos != null)
+            {
+                dgvErroresSintacticos.Rows.Add(linea, errorCompleto);
+            }
+        }
+
         // Sincroniza el parser avanzando tokens hasta encontrar CE13 (;) o PR2 (FIN)
         // Limita el consumo a 10 tokens para evitar consumir toda la entrada
         private void Sincronizar()
@@ -429,6 +446,7 @@ namespace AnalizadorLexico
                    tipo == "PR3" ||  // LEER
                    tipo == "PR4" ||  // MOSTRAR
                    tipo == "PR5" ||  // SI
+                   tipo == "PR7" ||  // SINO
                    tipo == "PR8" ||  // DESDE
                    tipo == "PR10" || // REPETIR
                    tipo == "PR11" || // ROMPER
@@ -485,9 +503,8 @@ namespace AnalizadorLexico
                         Sincronizar();
                         break;
                     case "PR7":
-                        // SINO - no es una instruccion independiente
-                        Error($"Se esperaba instruccion, se encontro SINO");
-                        Sincronizar();
+                        // SINO - delegar a ParseSINO_OPC para manejo correcto
+                        ParseSINO_OPC();
                         break;
                     case "PR8":
                         ParseDESDE();
@@ -567,26 +584,34 @@ namespace AnalizadorLexico
 
             if (!Match("ASI")) return; // =
 
-            // Consumir la expresión completa hasta ;
-            bool encontroPuntoComa = false;
-            while (!EsEOF() && TipoActual() != "CE13")
+            // Línea donde inicia la expresión (después del =)
+            int lineaAsignacion = TokenActual().Linea;
+
+            // Detectar expresión vacía: si el siguiente token es ';' en la misma línea -> error
+            if (TipoActual() == "CE13")
+            {
+                ErrorEnLinea($"Se esperaba expresión después de '=' en asignación de {varName}", lineaAsignacion);
+                // Consumir el ; si pertenece a la misma línea para sincronizar
+                if (!EsEOF() && TipoActual() == "CE13" && TokenActual().Linea == lineaAsignacion)
+                    NextToken();
+                EscribirSintaxis($"asignación {varName} = <expresión>");
+                return;
+            }
+
+            // Intentar parsear una expresión válida
+            string exp = ParseEXP();
+
+            // Validar que haya ; al final y que pertenezca a la misma línea
+            if (!EsEOF() && TipoActual() == "CE13" && TokenActual().Linea == lineaAsignacion)
             {
                 NextToken();
             }
-
-            // Validar que haya ; al final
-            if (!EsEOF() && TipoActual() == "CE13")
+            else
             {
-                encontroPuntoComa = true;
-                NextToken();
+                ErrorEnLinea($"Se esperaba ';' después de la expresión en asignación de {varName}", lineaAsignacion);
             }
 
-            if (!encontroPuntoComa)
-            {
-                Error($"Se esperaba ';' después de la expresión en asignación de {varName}");
-            }
-
-            EscribirSintaxis($"asignación {varName} = <expresión>");
+            EscribirSintaxis($"asignación {varName} = {(!string.IsNullOrEmpty(exp) ? exp : "<expresión>")}");
         }
 
         // LEER → PR3 ARG L_ARG2_LEER CE13
@@ -619,20 +644,40 @@ namespace AnalizadorLexico
         private void ParseMOSTRAR()
         {
             if (!Match("PR4")) return; // MOSTRAR
+            // Parsear argumentos: IDENT | CNU | CAD | EXP
+            StringBuilder linea = new StringBuilder();
 
-            // Consumir argumentos hasta ;
-            while (!EsEOF() && TipoActual() != "CE13")
+            // Si no hay argumentos y hay ; directamente, consumirlo
+            if (TipoActual() == "CE13")
             {
                 NextToken();
+                EscribirSintaxis("mostrar <cadena>");
+                return;
             }
 
-            // Intentar consumir el ; si está presente
+            // Intentar leer un argumento válido
+            if (TipoActual() == "IDENT" || TipoActual() == "CNU" || TipoActual() == "CAD" || TipoActual() == "CE7" || TipoActual() == "PR21")
+            {
+                linea.Append(ParseARG2());
+                ParseL_ARG2_MOSTRAR(linea);
+            }
+            else
+            {
+                // Si no hay un argumento válido, reportar y sincronizar hasta ;
+                Error("Se esperaba argumento para MOSTRAR (IDENT, CNU, CAD o expresión)");
+                while (!EsEOF() && TipoActual() != "CE13")
+                {
+                    NextToken();
+                }
+            }
+
+            // Consumir el ; si está presente
             if (TipoActual() == "CE13")
             {
                 NextToken();
             }
 
-            EscribirSintaxis("mostrar <cadena>");
+            EscribirSintaxis("mostrar " + linea.ToString());
         }
 
         // ROMPER → PR11 CE13
@@ -662,15 +707,18 @@ namespace AnalizadorLexico
         {
             if (!Match("PR20")) return; // VAR
 
-            // Consumir identificadores hasta ;
+            // Consumir identificadores hasta ; pero sin cruzar a otra línea
             bool encontroPuntoComa = false;
-            while (!EsEOF() && TipoActual() != "CE13")
+            // Línea donde inicia la declaración (el siguiente token después de VAR)
+            int lineaDeclaracion = TokenActual().Linea;
+
+            while (!EsEOF() && TipoActual() != "CE13" && TokenActual().Linea == lineaDeclaracion)
             {
                 NextToken();
             }
 
-            // Validar que haya ; al final
-            if (!EsEOF() && TipoActual() == "CE13")
+            // Validar que haya ; al final y que pertenezca a la misma línea
+            if (!EsEOF() && TipoActual() == "CE13" && TokenActual().Linea == lineaDeclaracion)
             {
                 encontroPuntoComa = true;
                 NextToken();
@@ -678,7 +726,7 @@ namespace AnalizadorLexico
 
             if (!encontroPuntoComa)
             {
-                Error("Se esperaba ';' después de la declaración de variable");
+                ErrorEnLinea("Se esperaba ';' después de la declaración de variable", lineaDeclaracion);
             }
 
             EscribirSintaxis("declaración var <identificador>");
@@ -961,19 +1009,47 @@ namespace AnalizadorLexico
         {
             StringBuilder comp = new StringBuilder();
 
+            // Parsear primer valor
             comp.Append(ParseVALOR());
 
+            // Verificar si hay un operador relacional
             if (TipoActual() == "OR1" || TipoActual() == "OR2" || TipoActual() == "OR3"
                 || TipoActual() == "OR4" || TipoActual() == "OR5" || TipoActual() == "OR6")
             {
                 string tipo = TipoActual();
                 NextToken();
                 comp.Append(" " + ObtenerRepresentacionSintaxis(tipo) + " ");
-                comp.Append(ParseVALOR());
+
+                // Parsear segundo valor
+                string valorDerecha = ParseVALOR();
+                if (string.IsNullOrEmpty(valorDerecha))
+                {
+                    Error("Se esperaba un valor (IDENT, CNU o CAD) a la derecha del operador relacional");
+                }
+                comp.Append(valorDerecha);
             }
             else
             {
-                Error("Se esperaba operador relacional (>, >=, <, <=, <>, ==)");
+                // Verificar si es un terminador válido (fin de condición)
+                // Terminadores válidos: ) OPL1(Y) OPL2(O) ENTONCES ; EOF
+                if (TipoActual() == "CE8" || TipoActual() == "OPL1" || TipoActual() == "OPL2" 
+                    || TipoActual() == "PR6" || TipoActual() == "CE13" || EsEOF())
+                {
+                    // Esto es válido - se espera operador relacional pero hay un terminador
+                    Error("Se esperaba operador relacional (>, >=, <, <=, <>, ==)");
+                }
+                // Si no es un valor pero no es terminador, verificar si hay dos valores consecutivos
+                else if (TipoActual() == "IDENT" || TipoActual() == "CNU" || TipoActual() == "CAD")
+                {
+                    Error("Se esperaba operador relacional (>, >=, <, <=, <>, ==) entre los valores");
+                    // Consumir el segundo valor para no quedarse atrapado
+                    comp.Append(" ");
+                    comp.Append(ParseVALOR());
+                }
+                else
+                {
+                    Error("Se esperaba operador relacional (>, >=, <, <=, <>, ==)");
+                }
             }
 
             return comp.ToString();
@@ -1018,28 +1094,25 @@ namespace AnalizadorLexico
             if (TipoActual() != "CE7") // (
             {
                 Error("Se esperaba '(' después de SI para la condición");
+                Sincronizar();
+                return;
             }
 
-            // Consumir condición hasta ENTONCES, verificando paréntesis de cierre
-            bool encontroParentesisCierre = false;
-            while (!EsEOF() && TipoActual() != "PR6")
-            {
-                if (TipoActual() == "CE8") // )
-                {
-                    encontroParentesisCierre = true;
-                }
-                NextToken();
-            }
+            if (!Match("CE7")) return; // (
 
-            // Validar que se haya encontrado paréntesis de cierre
-            if (!encontroParentesisCierre)
+            // Parsear la condición correctamente
+            string condicion = ParseCONDICION();
+
+            if (TipoActual() != "CE8") // )
             {
                 Error("Se esperaba ')' al final de la condición en SI");
             }
 
-            EscribirSintaxis("si <condición> entonces");
+            if (!Match("CE8")) return; // )
 
             if (!Match("PR6")) return; // ENTONCES
+
+            EscribirSintaxis($"si {condicion} entonces");
 
             indentacion++;
             try
@@ -1052,23 +1125,8 @@ namespace AnalizadorLexico
             }
             indentacion--;
 
-            // SINO_OPC
-            if (TipoActual() == "PR7") // SINO
-            {
-                EscribirSintaxis("sino");
-                if (!Match("PR7")) return;
-
-                indentacion++;
-                try
-                {
-                    ParseL_INSTR();
-                }
-                catch
-                {
-                    // Continuar incluso si hay errores en las instrucciones internas
-                }
-                indentacion--;
-            }
+            // SINO opcional (delegar a ParseSINO_OPC para consistencia)
+            ParseSINO_OPC();
 
             // Intentar match de FIN (consumir si está presente)
             if (TipoActual() == "PR2")
@@ -1087,8 +1145,21 @@ namespace AnalizadorLexico
         {
             if (TipoActual() == "PR7") // SINO
             {
-                NextToken();
-                ParseL_INSTR();
+                // Consumir SINO
+                if (!Match("PR7")) return;
+
+                // Escribir en sintaxis y parsear instrucciones del sino
+                EscribirSintaxis("sino");
+                indentacion++;
+                try
+                {
+                    ParseL_INSTR();
+                }
+                catch
+                {
+                    // Continuar incluso si hay errores en las instrucciones internas
+                }
+                indentacion--;
             }
         }
 
