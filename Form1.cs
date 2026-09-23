@@ -341,9 +341,8 @@ namespace AnalizadorLexico
                         : "Entero";
                 }
 
-                if (tipoIzq == "Cadena" &&
-                    tipoDer == "Cadena" &&
-                    operador == "+")
+                if (operador == "+" &&
+                    (tipoIzq == "Cadena" || tipoDer == "Cadena"))
                 {
                     return "Cadena";
                 }
@@ -1379,6 +1378,13 @@ namespace AnalizadorLexico
                 return null;
             }
 
+            if (operador == "OA1" &&
+                (izquierda is string || derecha is string))
+            {
+                return FormatearValorConcatenacion(izquierda) +
+                       FormatearValorConcatenacion(derecha);
+            }
+
             bool ambosEnteros =
                 izquierda is int &&
                 derecha is int;
@@ -1420,6 +1426,26 @@ namespace AnalizadorLexico
             }
 
             return null;
+        }
+
+        private string FormatearValorConcatenacion(object valor)
+        {
+            if (valor == null)
+                return "";
+
+            if (valor is double)
+                return ((double)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (valor is float)
+                return ((float)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (valor is decimal)
+                return ((decimal)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            return valor.ToString();
         }
 
         private string ObtenerTipoValorSemantico(
