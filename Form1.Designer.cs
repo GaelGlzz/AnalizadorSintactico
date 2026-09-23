@@ -40,6 +40,9 @@ namespace AnalizadorLexico
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
             this.dgvSimbolos = new System.Windows.Forms.DataGridView();
+            this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Tipo = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.lblTitulo = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.btnInfo = new System.Windows.Forms.Button();
@@ -52,9 +55,7 @@ namespace AnalizadorLexico
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.rtSintaxis = new System.Windows.Forms.RichTextBox();
             this.label6 = new System.Windows.Forms.Label();
-            this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Tipo = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Valor = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErrores)).BeginInit();
@@ -350,7 +351,8 @@ namespace AnalizadorLexico
             this.dgvSimbolos.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Column3,
             this.Column4,
-            this.Tipo});
+            this.Tipo,
+            this.Valor});
             this.dgvSimbolos.EnableHeadersVisualStyles = false;
             this.dgvSimbolos.Location = new System.Drawing.Point(20, 80);
             this.dgvSimbolos.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -361,6 +363,28 @@ namespace AnalizadorLexico
             this.dgvSimbolos.Size = new System.Drawing.Size(526, 157);
             this.dgvSimbolos.TabIndex = 0;
             this.dgvSimbolos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSimbolos_CellContentClick);
+            // 
+            // Column3
+            // 
+            this.Column3.FillWeight = 50F;
+            this.Column3.HeaderText = "Número";
+            this.Column3.MinimumWidth = 6;
+            this.Column3.Name = "Column3";
+            this.Column3.ReadOnly = true;
+            // 
+            // Column4
+            // 
+            this.Column4.HeaderText = "Nombre";
+            this.Column4.MinimumWidth = 6;
+            this.Column4.Name = "Column4";
+            this.Column4.ReadOnly = true;
+            // 
+            // Tipo
+            // 
+            this.Tipo.HeaderText = "Tipo";
+            this.Tipo.MinimumWidth = 8;
+            this.Tipo.Name = "Tipo";
+            this.Tipo.ReadOnly = true;
             // 
             // lblTitulo
             // 
@@ -524,27 +548,12 @@ namespace AnalizadorLexico
             this.label6.Text = "Sintaxis";
             this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // Column3
+            // Valor
             // 
-            this.Column3.FillWeight = 50F;
-            this.Column3.HeaderText = "Número";
-            this.Column3.MinimumWidth = 6;
-            this.Column3.Name = "Column3";
-            this.Column3.ReadOnly = true;
-            // 
-            // Column4
-            // 
-            this.Column4.HeaderText = "Nombre";
-            this.Column4.MinimumWidth = 6;
-            this.Column4.Name = "Column4";
-            this.Column4.ReadOnly = true;
-            // 
-            // Tipo
-            // 
-            this.Tipo.HeaderText = "Tipo";
-            this.Tipo.MinimumWidth = 8;
-            this.Tipo.Name = "Tipo";
-            this.Tipo.ReadOnly = true;
+            this.Valor.HeaderText = "Valor";
+            this.Valor.MinimumWidth = 8;
+            this.Valor.Name = "Valor";
+            this.Valor.ReadOnly = true;
             // 
             // Form1
             // 
@@ -618,5 +627,6 @@ namespace AnalizadorLexico
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.DataGridViewTextBoxColumn Tipo;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Valor;
     }
 }

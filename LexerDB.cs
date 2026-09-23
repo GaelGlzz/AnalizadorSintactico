@@ -156,6 +156,21 @@ namespace AnalizadorLexico
                     continue;
                 }
 
+                // ── Caracteres que separan lexemas ───────────────────────────
+                if (c == ';' || c == '(' || c == ')' ||
+                    c == '{' || c == '}' || c == ':' ||
+                    c == ',' || c == '[' || c == ']')
+                {
+                    if (token.Length > 0)
+                    {
+                        result.Add(token.ToString());
+                        token.Clear();
+                    }
+
+                    result.Add(c.ToString());
+                    continue;
+                }
+
                 token.Append(c);
             }
 
@@ -228,6 +243,55 @@ namespace AnalizadorLexico
                 return token;
             }
 
+            // ── Reconocer números reales ─────────────────────────────────
+            if (lexema.Contains(".")
+                && !lexema.Contains("E")
+                && !lexema.Contains("e"))
+            {
+                string numero = lexema.Replace(",", ".");
+
+                // Validar que solo tenga un punto decimal
+                if (numero.Count(c => c == '.') == 1)
+                {
+                    int posicionPunto = numero.IndexOf('.');
+                    int decimales = numero.Length - posicionPunto - 1;
+
+                    // Máximo 3 decimales
+                    if (decimales >= 1 && decimales <= 3 &&
+                        double.TryParse(
+                            numero,
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out _))
+                    {
+                        token.Estado = 133;
+                        token.Categoria = "CN REALES";
+                        token.EsError = false;
+                        return token;
+                    }
+                }
+
+                // Si tiene más de 3 decimales o formato inválido
+                token.Estado = 216;
+                token.Categoria = "ERROR: Constante numérica real no válida";
+                token.EsError = true;
+                return token;
+            }
+
+            // ── Reconocer números exponenciales ──────────────────────────
+            if ((lexema.Contains("E") || lexema.Contains("e"))
+                && double.TryParse(
+                    lexema,
+                    System.Globalization.NumberStyles.Float |
+                    System.Globalization.NumberStyles.AllowExponent,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out _))
+            {
+                token.Estado = 137;
+                token.Categoria = "CN CON EXPONENTE";
+                token.EsError = false;
+                return token;
+            }
             int estadoActual = 1;
 
             // ── Helper: buscar fila por Fase ─────────────────────────────
