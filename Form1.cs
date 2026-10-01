@@ -17,6 +17,19 @@ namespace AnalizadorLexico
         private LexerDB lexerDB;
         private List<Simbolo> tablaSimbolos = new List<Simbolo>();
         private List<Token> tokensLexico = new List<Token>();
+        private List<string> pilaScopes = new List<string>();
+        private Dictionary<string, int> contadoresScopes =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        private string ScopeActual
+        {
+            get
+            {
+                return pilaScopes.Count == 0
+                    ? "Global"
+                    : pilaScopes[pilaScopes.Count - 1];
+            }
+        }
 
         public Form1()
         {
@@ -51,6 +64,133 @@ namespace AnalizadorLexico
 
                 label4.Enabled = false;
             }
+
+        }
+
+        private bool EsInicioScope(string categoria)
+        {
+            return ObtenerNombreScope(categoria) != null;
+        }
+
+        private string ObtenerNombreScope(string categoria)
+        {
+            switch (categoria)
+            {
+                case "SI":
+                case "PR5": return "SI";
+                case "SINO":
+                case "PR7": return "SINO";
+                case "REPETIR":
+                case "PR10": return "REPETIR";
+                case "PARA":
+                case "PR12": return "PARA";
+                case "MIENTRAS":
+                case "PR14": return "MIENTRAS";
+                case "FUNCION":
+                case "PR18": return "FUNCION";
+                default: return null;
+            }
+        }
+
+        private void ActualizarScope(List<Token> tokensLinea)
+        {
+            if (tokensLinea == null)
+                return;
+
+            foreach (var token in tokensLinea)
+            {
+                if (token == null || token.EsError)
+                    continue;
+
+                if (token.Categoria == "FIN" ||
+                    token.Categoria == "PR2")
+                {
+                    if (pilaScopes.Count > 0)
+                        pilaScopes.RemoveAt(pilaScopes.Count - 1);
+
+                    continue;
+                }
+
+                string nombreScope =
+                    ObtenerNombreScope(token.Categoria);
+
+                if (nombreScope != null)
+                {
+                    int numero;
+
+                    if (!contadoresScopes.TryGetValue(
+                        nombreScope,
+                        out numero))
+                    {
+                        numero = 0;
+                    }
+
+                    numero++;
+                    contadoresScopes[nombreScope] = numero;
+                    pilaScopes.Add(nombreScope + numero);
+                }
+            }
+        }
+
+        private Simbolo BuscarSimboloVisible(
+            string nombre,
+            List<Simbolo> simbolos)
+        {
+            if (string.IsNullOrEmpty(nombre) || simbolos == null)
+                return null;
+
+            for (int i = pilaScopes.Count; i >= 0; i--)
+            {
+                string scope = i == 0
+                    ? "Global"
+                    : pilaScopes[i - 1];
+
+                var simbolo = simbolos.LastOrDefault(
+                    s => s.Nombre.Equals(
+                        nombre,
+                        StringComparison.OrdinalIgnoreCase) &&
+                         string.Equals(
+                             s.Scope,
+                             scope,
+                             StringComparison.OrdinalIgnoreCase));
+
+                if (simbolo != null)
+                    return simbolo;
+            }
+
+            return null;
+        }
+
+        private void RegistrarSimbolo(Token token, bool esDeclaracion)
+        {
+            if (token == null ||
+                token.EsError ||
+                token.Categoria != "IDENT" ||
+                !esDeclaracion)
+            {
+                return;
+            }
+
+            var existente = tablaSimbolos.FirstOrDefault(
+                s => s.Nombre.Equals(
+                    token.Lexema,
+                    StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(
+                         s.Scope,
+                         ScopeActual,
+                         StringComparison.OrdinalIgnoreCase));
+
+            if (existente != null)
+                return;
+
+            tablaSimbolos.Add(new Simbolo
+            {
+                NumID = tablaSimbolos.Count + 1,
+                Nombre = token.Lexema,
+                Tipo = string.Empty,
+                Valor = string.Empty,
+                Scope = ScopeActual
+            });
         }
 
         private string ObtenerDefinicion(string categoria)
@@ -186,10 +326,9 @@ namespace AnalizadorLexico
                 }
                 else if (t.Categoria == "IDENT")
                 {
-                    var sym = tablaSimbolos.FirstOrDefault(
-                        s => s.Nombre.Equals(
-                            t.Lexema,
-                            StringComparison.OrdinalIgnoreCase));
+                    var sym = BuscarSimboloVisible(
+                        t.Lexema,
+                        tablaSimbolos);
 
                     if (sym == null ||
                         string.IsNullOrEmpty(sym.Tipo) ||
@@ -284,10 +423,9 @@ namespace AnalizadorLexico
                     return "Cadena";
 
                 case "IDENT":
-                    var s = tablaSimbolos.FirstOrDefault(
-                        x => x.Nombre.Equals(
-                            token.Lexema,
-                            StringComparison.OrdinalIgnoreCase));
+                    var s = BuscarSimboloVisible(
+                        token.Lexema,
+                        tablaSimbolos);
 
                     return (
                         s != null &&
@@ -829,11 +967,9 @@ namespace AnalizadorLexico
             switch (token.Categoria)
             {
                 case "IDENT":
-                    var simbolo =
-                        simbolos.FirstOrDefault(
-                            s => s.Nombre.Equals(
-                                token.Lexema,
-                                StringComparison.OrdinalIgnoreCase));
+                    var simbolo = BuscarSimboloVisible(
+                        token.Lexema,
+                        simbolos);
 
                     if (simbolo == null ||
                         simbolo.Valor == null ||
@@ -1503,6 +1639,8 @@ namespace AnalizadorLexico
             dgvSimbolos.Rows.Clear();
             tablaSimbolos.Clear();
             tokensLexico.Clear();
+            pilaScopes.Clear();
+            contadoresScopes.Clear();
 
             string[] lines =
                 RemoveLineNumbers(rtbFuente.Text)
@@ -1526,7 +1664,21 @@ namespace AnalizadorLexico
 
                     try
                     {
-                        t = lexerDB.RecorrerMatriz(lex);
+                        bool esCadena =
+                            lex.Length >= 2 &&
+                            ((lex.StartsWith("'") &&
+                              lex.EndsWith("'")) ||
+                             (lex.StartsWith("\"") &&
+                              lex.EndsWith("\"")));
+
+                        t = esCadena
+                            ? new Token
+                            {
+                                Lexema = lex,
+                                Categoria = "CAD",
+                                EsError = false
+                            }
+                            : lexerDB.RecorrerMatriz(lex);
                     }
                     catch (Exception ex)
                     {
@@ -1545,15 +1697,20 @@ namespace AnalizadorLexico
                     tokensLinea.Add(t);
                 }
 
-                // Registrar símbolos
-                foreach (var token in tokensLinea)
+                ActualizarScope(tokensLinea);
+
+                // Registrar símbolos declarados en el scope actual
+                for (int indiceToken = 0;
+                     indiceToken < tokensLinea.Count;
+                     indiceToken++)
                 {
-                    if (!token.EsError)
-                    {
-                        lexerDB.ActualizarTablaSimbolos(
-                            token,
-                            tablaSimbolos);
-                    }
+                    var token = tokensLinea[indiceToken];
+                    bool esDeclaracion =
+                        indiceToken > 0 &&
+                        (tokensLinea[indiceToken - 1].Categoria == "VAR" ||
+                         tokensLinea[indiceToken - 1].Categoria == "PR20");
+
+                    RegistrarSimbolo(token, esDeclaracion);
                 }
 
                 // ====================================================
@@ -1588,12 +1745,10 @@ namespace AnalizadorLexico
                         }
 
                         var simboloDestino =
-                            tablaSimbolos.FirstOrDefault(
-                                s => s.Nombre.Equals(
-                                    nombreVar,
-                                    StringComparison.OrdinalIgnoreCase));
+                            BuscarSimboloVisible(
+                                nombreVar,
+                                tablaSimbolos);
 
-                        // Primero inferir el tipo
                         string tipoResultado =
                             InferirTipoConPilaSemantica(
                                 tokensExpr,
@@ -1682,10 +1837,9 @@ namespace AnalizadorLexico
                         tokensLinea[k + 1].Categoria == "IDENT")
                     {
                         var simbolo =
-                            tablaSimbolos.FirstOrDefault(
-                                s => s.Nombre.Equals(
-                                    tokensLinea[k + 1].Lexema,
-                                    StringComparison.OrdinalIgnoreCase));
+                            BuscarSimboloVisible(
+                                tokensLinea[k + 1].Lexema,
+                                tablaSimbolos);
 
                         if (simbolo != null &&
                             (string.IsNullOrEmpty(simbolo.Tipo) ||
@@ -1693,7 +1847,7 @@ namespace AnalizadorLexico
                         {
                             simbolo.Tipo = "Entero";
                         }
-                    }
+                   }
                 }
 
                 // ====================================================
@@ -1862,6 +2016,14 @@ namespace AnalizadorLexico
                         s.Valor ?? string.Empty;
                 }
 
+                if (dgvSimbolos.Columns.Count > 4)
+                {
+                    dgvSimbolos.Rows[idx].Cells[4].Value =
+                        string.IsNullOrEmpty(s.Scope)
+                            ? "Global"
+                            : s.Scope;
+                }
+
                 dgvSimbolos.Rows[idx]
                     .DefaultCellStyle.ForeColor =
                     Color.Red;
@@ -1870,6 +2032,7 @@ namespace AnalizadorLexico
             rtbFuente.ReadOnly = true;
         }
 
+        // ============================================================
         // ============================================================
         // RESTO DEL FORM
         // ============================================================
