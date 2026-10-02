@@ -272,7 +272,15 @@ namespace AnalizadorLexico
                     tablaSimbolos);
 
                 if (simbolo == null)
+                {
+                    AgregarErrorSemantico(
+                        numeroLinea,
+                        "La variable '" + token.Lexema +
+                        "' no está declarada en un scope visible",
+                        "Semántico - Error de alcance");
+                    valida = false;
                     continue;
+                }
 
                 if (string.IsNullOrEmpty(simbolo.Valor))
                 {
@@ -2395,6 +2403,9 @@ namespace AnalizadorLexico
                 return;
             }
 
+            dgvErroresSintacticos.Rows.Clear();
+            rtSintaxis.Clear();
+
             EjecutarLexico();
 
             if (dgvErrores.Rows.Count > 0)
@@ -2419,9 +2430,37 @@ namespace AnalizadorLexico
 
                 if (hayErroresSintacticos)
                 {
+                    bool haySemanticos =
+                        ContieneErroresDeCategoria("Semántico -");
+
+                    bool haySintacticos =
+                        ContieneErroresSintacticos();
+
+                    string mensaje;
+                    string titulo;
+
+                    if (haySintacticos && haySemanticos)
+                    {
+                        mensaje =
+                            "Se encontraron errores sintácticos y semánticos.";
+                        titulo = "Errores de análisis";
+                    }
+                    else if (haySemanticos)
+                    {
+                        mensaje =
+                            "Se encontraron errores semánticos.";
+                        titulo = "Errores Semánticos";
+                    }
+                    else
+                    {
+                        mensaje =
+                            "Se encontraron errores en la sintaxis.";
+                        titulo = "Errores Sintácticos";
+                    }
+
                     MessageBox.Show(
-                        "Se encontraron errores en la sintaxis.",
-                        "Errores Sintácticos",
+                        mensaje,
+                        titulo,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                 }
@@ -2506,6 +2545,42 @@ namespace AnalizadorLexico
             parser.Parse();
 
             return dgvErroresSintacticos.Rows.Count > 0;
+        }
+
+        private bool ContieneErroresDeCategoria(string categoria)
+        {
+            foreach (DataGridViewRow fila in dgvErroresSintacticos.Rows)
+            {
+                string error = Convert.ToString(
+                    fila.Cells[1].Value);
+
+                if (error.StartsWith(
+                    categoria,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ContieneErroresSintacticos()
+        {
+            foreach (DataGridViewRow fila in dgvErroresSintacticos.Rows)
+            {
+                string error = Convert.ToString(
+                    fila.Cells[1].Value);
+
+                if (!error.StartsWith(
+                    "Semántico -",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private string DeterminarTipoTokenDesdeCategoria(

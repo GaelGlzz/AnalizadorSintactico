@@ -409,7 +409,7 @@ namespace AnalizadorLexico
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(94, 57);
             this.label4.TabIndex = 5;
-            this.label4.Text = "Sintaxis\r\nAnálisis";
+            this.label4.Text = "Analizar";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.label4.Click += new System.EventHandler(this.label4_Click_1);
             this.label4.MouseEnter += new System.EventHandler(this.label4_MouseEnter);
@@ -442,9 +442,9 @@ namespace AnalizadorLexico
             // 
             this.groupBox5.Controls.Add(this.label5);
             this.groupBox5.Controls.Add(this.dgvErroresSintacticos);
-            this.groupBox5.Location = new System.Drawing.Point(22, 513);
+            this.groupBox5.Location = new System.Drawing.Point(507, 509);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(379, 176);
+            this.groupBox5.Size = new System.Drawing.Size(705, 176);
             this.groupBox5.TabIndex = 6;
             this.groupBox5.TabStop = false;
             // 
@@ -455,7 +455,7 @@ namespace AnalizadorLexico
             this.label5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label5.Location = new System.Drawing.Point(0, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(379, 38);
+            this.label5.Size = new System.Drawing.Size(705, 38);
             this.label5.TabIndex = 5;
             this.label5.Text = "Errores";
             this.label5.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -485,7 +485,7 @@ namespace AnalizadorLexico
             this.dgvErroresSintacticos.ReadOnly = true;
             this.dgvErroresSintacticos.RowHeadersVisible = false;
             this.dgvErroresSintacticos.RowHeadersWidth = 51;
-            this.dgvErroresSintacticos.Size = new System.Drawing.Size(350, 102);
+            this.dgvErroresSintacticos.Size = new System.Drawing.Size(677, 102);
             this.dgvErroresSintacticos.TabIndex = 0;
             this.dgvErroresSintacticos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvErroresSintacticos_CellContentClick);
             // 
@@ -509,7 +509,7 @@ namespace AnalizadorLexico
             // 
             this.groupBox6.Controls.Add(this.rtSintaxis);
             this.groupBox6.Controls.Add(this.label6);
-            this.groupBox6.Location = new System.Drawing.Point(507, 513);
+            this.groupBox6.Location = new System.Drawing.Point(22, 509);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(379, 176);
             this.groupBox6.TabIndex = 7;
