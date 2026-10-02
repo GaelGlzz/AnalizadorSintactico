@@ -45,6 +45,7 @@ namespace AnalizadorLexico
             this.Tipo = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Valor = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Scope = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Bytes = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.lblTitulo = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.btnInfo = new System.Windows.Forms.Button();
@@ -298,7 +299,7 @@ namespace AnalizadorLexico
             this.groupBox4.Controls.Add(this.dgvSimbolos);
             this.groupBox4.Location = new System.Drawing.Point(507, 327);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(379, 176);
+            this.groupBox4.Size = new System.Drawing.Size(705, 176);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             // 
@@ -309,7 +310,7 @@ namespace AnalizadorLexico
             this.label3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label3.Location = new System.Drawing.Point(1, -2);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(378, 38);
+            this.label3.Size = new System.Drawing.Size(704, 38);
             this.label3.TabIndex = 6;
             this.label3.Text = "Tabla de símbolos";
             this.label3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -334,14 +335,15 @@ namespace AnalizadorLexico
             this.Column4,
             this.Tipo,
             this.Valor,
-            this.Scope});
+            this.Scope,
+            this.Bytes});
             this.dgvSimbolos.EnableHeadersVisualStyles = false;
             this.dgvSimbolos.Location = new System.Drawing.Point(13, 52);
             this.dgvSimbolos.Name = "dgvSimbolos";
             this.dgvSimbolos.ReadOnly = true;
             this.dgvSimbolos.RowHeadersVisible = false;
             this.dgvSimbolos.RowHeadersWidth = 51;
-            this.dgvSimbolos.Size = new System.Drawing.Size(351, 102);
+            this.dgvSimbolos.Size = new System.Drawing.Size(677, 102);
             this.dgvSimbolos.TabIndex = 0;
             this.dgvSimbolos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSimbolos_CellContentClick);
             // 
@@ -379,6 +381,12 @@ namespace AnalizadorLexico
             this.Scope.HeaderText = "Scope";
             this.Scope.Name = "Scope";
             this.Scope.ReadOnly = true;
+            // 
+            // Bytes
+            // 
+            this.Bytes.HeaderText = "Tamaño (bytes)";
+            this.Bytes.Name = "Bytes";
+            this.Bytes.ReadOnly = true;
             // 
             // lblTitulo
             // 
@@ -449,7 +457,7 @@ namespace AnalizadorLexico
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(379, 38);
             this.label5.TabIndex = 5;
-            this.label5.Text = "Errores Sintácticos";
+            this.label5.Text = "Errores";
             this.label5.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // dgvErroresSintacticos
@@ -538,7 +546,7 @@ namespace AnalizadorLexico
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(244)))), ((int)(((byte)(248)))));
-            this.ClientSize = new System.Drawing.Size(928, 690);
+            this.ClientSize = new System.Drawing.Size(1252, 690);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.btnInfo);
@@ -607,5 +615,6 @@ namespace AnalizadorLexico
         private System.Windows.Forms.DataGridViewTextBoxColumn Tipo;
         private System.Windows.Forms.DataGridViewTextBoxColumn Valor;
         private System.Windows.Forms.DataGridViewTextBoxColumn Scope;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Bytes;
     }
 }

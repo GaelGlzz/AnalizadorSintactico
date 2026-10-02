@@ -20,6 +20,8 @@ namespace AnalizadorLexico
         private List<string> pilaScopes = new List<string>();
         private Dictionary<string, int> contadoresScopes =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private List<string> codigoIntermedio = new List<string>();
+        private List<string> codigoOptimizado = new List<string>();
 
         private string ScopeActual
         {
@@ -193,6 +195,99 @@ namespace AnalizadorLexico
             });
         }
 
+        private int ObtenerTamanoBytes(string tipo, string valor)
+        {
+            switch (tipo)
+            {
+                case "Booleano": return 1;
+                case "Entero": return 4;
+                case "Real": return 8;
+                case "Cadena":
+                    return string.IsNullOrEmpty(valor)
+                        ? 0
+                        : Encoding.UTF8.GetByteCount(valor);
+                default: return 0;
+            }
+        }
+
+        private void ActualizarTamanoSimbolo(Simbolo simbolo)
+        {
+            if (simbolo == null)
+                return;
+
+            simbolo.TamanoBytes = ObtenerTamanoBytes(
+                simbolo.Tipo,
+                simbolo.Valor);
+        }
+
+        private void AgregarErrorSemantico(
+            int numeroLinea,
+            string mensaje,
+            string categoria)
+        {
+            if (dgvErroresSintacticos == null)
+                return;
+
+            int fila = dgvErroresSintacticos.Rows.Add(
+                numeroLinea,
+                categoria + ": " + mensaje);
+
+            dgvErroresSintacticos.Rows[fila]
+                .DefaultCellStyle.ForeColor = Color.DarkOrange;
+        }
+
+        private void GenerarCodigoIntermedio(
+            string destino,
+            List<Token> expresion)
+        {
+            string texto = string.Join(
+                " ",
+                expresion.Select(t => t.Lexema));
+
+            codigoIntermedio.Add(
+                destino + " = " + texto);
+        }
+
+        private void OptimizarCodigoIntermedio()
+        {
+            codigoOptimizado = codigoIntermedio
+                .Where(linea => !string.IsNullOrWhiteSpace(linea))
+                .Distinct()
+                .ToList();
+        }
+
+        private bool ValidarInicializacion(
+            List<Token> expresion,
+            int numeroLinea)
+        {
+            bool valida = true;
+
+            foreach (var token in expresion)
+            {
+                if (token.Categoria != "IDENT")
+                    continue;
+
+                var simbolo = BuscarSimboloVisible(
+                    token.Lexema,
+                    tablaSimbolos);
+
+                if (simbolo == null)
+                    continue;
+
+                if (string.IsNullOrEmpty(simbolo.Valor))
+                {
+                    AgregarErrorSemantico(
+                        numeroLinea,
+                        "La variable '" + token.Lexema +
+                        "' se utiliza sin inicializar",
+                        "Semántico - Error de inicialización");
+                    valida = false;
+                }
+            }
+
+            return valida;
+        }
+
         private string ObtenerDefinicion(string categoria)
         {
             switch (categoria)
@@ -289,12 +384,12 @@ namespace AnalizadorLexico
         {
             if (tokensExpr == null || tokensExpr.Count == 0)
             {
-                dgvErrores.Rows.Add(
+                AgregarErrorSemantico(
                     numeroLinea,
                     "Expresión vacía o incompleta",
                     "Semántico - Error en expresión");
 
-                dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                     .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                 return "Error";
@@ -334,12 +429,12 @@ namespace AnalizadorLexico
                         string.IsNullOrEmpty(sym.Tipo) ||
                         sym.Tipo == "Sin determinar")
                     {
-                        dgvErrores.Rows.Add(
+                        AgregarErrorSemantico(
                             numeroLinea,
                             $"Tipo desconocido para el identificador '{t.Lexema}'",
                             "Semántico - Tipo desconocido");
 
-                        dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                        dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                             .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                         return "Error";
@@ -582,12 +677,12 @@ namespace AnalizadorLexico
                     string mensaje =
                         $"Operador lógico '{opToken.Lexema}' requiere operandos booleanos";
 
-                    dgvErrores.Rows.Add(
+                    AgregarErrorSemantico(
                         numeroLinea,
                         mensaje,
                         "Semántico - Tipos incompatibles");
 
-                    dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                    dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                         .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                     return "Error";
@@ -662,12 +757,12 @@ namespace AnalizadorLexico
                         string mensaje =
                             $"Comparación no válida: '{tipoIzq}' {opRelacional} '{tipoDer}'";
 
-                        dgvErrores.Rows.Add(
+                        AgregarErrorSemantico(
                             numeroLinea,
                             mensaje,
                             "Semántico - Tipos incompatibles");
 
-                        dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                        dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                             .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                         resultado = "Error";
@@ -791,12 +886,12 @@ namespace AnalizadorLexico
                 string mensajeNo =
                     $"El operador 'NO' requiere un operando Booleano, se obtuvo '{operando}'";
 
-                dgvErrores.Rows.Add(
+                AgregarErrorSemantico(
                     numeroLinea,
                     mensajeNo,
                     "Semántico - Tipos incompatibles");
 
-                dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                     .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                 pilaTipos.Push("Error");
@@ -830,12 +925,12 @@ namespace AnalizadorLexico
                 string mensaje =
                     $"Operación no válida: '{tipoIzq}' {simbolo} '{tipoDer}'";
 
-                dgvErrores.Rows.Add(
+                AgregarErrorSemantico(
                     numeroLinea,
                     mensaje,
                     "Semántico - Tipos incompatibles");
 
-                dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                     .DefaultCellStyle.ForeColor = Color.DarkOrange;
 
                 pilaTipos.Push("Error");
@@ -848,12 +943,12 @@ namespace AnalizadorLexico
 
         private void Error_TipoCondicionVacia(int numeroLinea)
         {
-            dgvErrores.Rows.Add(
+                AgregarErrorSemantico(
                 numeroLinea,
                 "Expresión vacía o mal formada",
                 "Semántico - Expresión inválida");
 
-            dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+            dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                 .DefaultCellStyle.ForeColor = Color.DarkOrange;
         }
 
@@ -1641,6 +1736,8 @@ namespace AnalizadorLexico
             tokensLexico.Clear();
             pilaScopes.Clear();
             contadoresScopes.Clear();
+            codigoIntermedio.Clear();
+            codigoOptimizado.Clear();
 
             string[] lines =
                 RemoveLineNumbers(rtbFuente.Text)
@@ -1749,11 +1846,28 @@ namespace AnalizadorLexico
                                 nombreVar,
                                 tablaSimbolos);
 
+                        if (simboloDestino == null)
+                        {
+                            AgregarErrorSemantico(
+                                numeroLinea,
+                                "La variable '" + nombreVar +
+                                "' no está declarada en el scope actual",
+                                "Semántico - Error de alcance");
+                        }
+
+                        GenerarCodigoIntermedio(
+                            nombreVar,
+                            tokensExpr);
+
                         string tipoResultado =
                             InferirTipoConPilaSemantica(
                                 tokensExpr,
                                 tablaSimbolos,
                                 numeroLinea);
+
+                        ValidarInicializacion(
+                            tokensExpr,
+                            numeroLinea);
 
                         if (simboloDestino != null &&
                             tipoResultado != "Error" &&
@@ -1797,6 +1911,18 @@ namespace AnalizadorLexico
 
                                 if (valorEvaluado != null)
                                 {
+                                    if (valorEvaluado is string &&
+                                        Encoding.UTF8.GetByteCount(
+                                            valorEvaluado.ToString()) > 255)
+                                    {
+                                        AgregarErrorSemantico(
+                                            numeroLinea,
+                                            "La cadena excede el límite de 255 bytes",
+                                            "Semántico - Desbordamiento");
+                                        k = j;
+                                        continue;
+                                    }
+
                                     simboloDestino.Valor =
                                         ValorParaTabla(
                                             valorEvaluado);
@@ -1811,6 +1937,9 @@ namespace AnalizadorLexico
                                         simboloDestino.Tipo =
                                             tipoEvaluado;
                                     }
+
+                                    ActualizarTamanoSimbolo(
+                                        simboloDestino);
                                 }
                             }
                             catch
@@ -1900,12 +2029,12 @@ namespace AnalizadorLexico
                             string mensaje =
                                 $"La condición de SI debe ser Booleana, se obtuvo '{tipoCondicion}'";
 
-                            dgvErrores.Rows.Add(
+                            AgregarErrorSemantico(
                                 numeroLinea,
                                 mensaje,
                                 "Semántico - Condición no booleana");
 
-                            dgvErrores.Rows[dgvErrores.Rows.Count - 1]
+                            dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
                                 .DefaultCellStyle.ForeColor =
                                 Color.DarkOrange;
                         }
@@ -2024,10 +2153,18 @@ namespace AnalizadorLexico
                             : s.Scope;
                 }
 
+                if (dgvSimbolos.Columns.Count > 5)
+                {
+                    dgvSimbolos.Rows[idx].Cells[5].Value =
+                        s.TamanoBytes;
+                }
+
                 dgvSimbolos.Rows[idx]
                     .DefaultCellStyle.ForeColor =
                     Color.Red;
             }
+
+            OptimizarCodigoIntermedio();
 
             rtbFuente.ReadOnly = true;
         }
