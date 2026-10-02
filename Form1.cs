@@ -499,6 +499,9 @@ namespace AnalizadorLexico
                 case "CAD":
                     return "Cadena";
 
+                case "BOOLEANO":
+                    return "Booleano";
+
                 case "IDENT":
                     return "Referencia";
 
@@ -524,6 +527,9 @@ namespace AnalizadorLexico
 
                 case "CAD":
                     return "Cadena";
+
+                case "BOOLEANO":
+                    return "Booleano";
 
                 case "IDENT":
                     var s = BuscarSimboloVisible(
@@ -662,6 +668,7 @@ namespace AnalizadorLexico
                     opToken.Categoria != "O")
                 {
                     break;
+
                 }
 
                 idx++;
@@ -1108,6 +1115,11 @@ namespace AnalizadorLexico
                         return real;
                     }
                     break;
+
+                case "BOOLEANO":
+                    return token.Lexema.Equals(
+                        "verdadero",
+                        StringComparison.OrdinalIgnoreCase);
 
                 case "CAD":
                     string cadena = token.Lexema;
@@ -1776,7 +1788,22 @@ namespace AnalizadorLexico
                              (lex.StartsWith("\"") &&
                               lex.EndsWith("\"")));
 
-                        t = esCadena
+                        bool esBooleano =
+                            lex.Equals(
+                                "verdadero",
+                                StringComparison.OrdinalIgnoreCase) ||
+                            lex.Equals(
+                                "falso",
+                                StringComparison.OrdinalIgnoreCase);
+
+                        t = esBooleano
+                            ? new Token
+                            {
+                                Lexema = lex,
+                                Categoria = "BOOLEANO",
+                                EsError = false
+                            }
+                            : esCadena
                             ? new Token
                             {
                                 Lexema = lex,
@@ -2589,6 +2616,7 @@ namespace AnalizadorLexico
             switch (categoria)
             {
                 case "IDENT": return "IDENT";
+                case "BOOLEANO": return "BOL";
 
                 case "INICIO": return "PR1";
                 case "FIN": return "PR2";

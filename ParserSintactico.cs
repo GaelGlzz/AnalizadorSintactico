@@ -178,6 +178,7 @@ namespace AnalizadorLexico
                 case "IDENT": return "IDENT";
                 case "CNU": return "CNU";
                 case "CAD": return "CAD";
+                case "BOL": return "BOL";
                 case "EOF": return "fin de archivo";
 
                 default: return tipoCodigo;
@@ -1131,7 +1132,8 @@ namespace AnalizadorLexico
                     valor);
             }
             else if (tipo == "CNU" ||
-                     tipo == "CAD")
+                     tipo == "CAD" ||
+                     tipo == "BOL")
             {
                 string valor =
                     TokenActual().Valor;
@@ -1366,7 +1368,8 @@ namespace AnalizadorLexico
                     "CNU",
                     valor);
             }
-            else if (TipoActual() == "CAD")
+            else if (TipoActual() == "CAD" ||
+                     TipoActual() == "BOL")
             {
                 string valor =
                     TokenActual().Valor;
@@ -1486,6 +1489,8 @@ namespace AnalizadorLexico
             StringBuilder comp =
                 new StringBuilder();
 
+            string tipoInicial = TipoActual();
+
             comp.Append(ParseVALOR());
 
             if (TipoActual() == "OR1" ||
@@ -1520,12 +1525,14 @@ namespace AnalizadorLexico
             }
             else
             {
-                if (TipoActual() == "CE8" ||
+                if ((TipoActual() == "CE8" ||
                     TipoActual() == "OPL1" ||
                     TipoActual() == "OPL2" ||
                     TipoActual() == "PR6" ||
                     TipoActual() == "CE13" ||
-                    EsEOF())
+                    EsEOF()) &&
+                    tipoInicial != "IDENT" &&
+                    tipoInicial != "BOL")
                 {
                     Error(
                         "Se esperaba operador relacional " +
@@ -1533,16 +1540,18 @@ namespace AnalizadorLexico
                 }
                 else if (TipoActual() == "IDENT" ||
                          TipoActual() == "CNU" ||
-                         TipoActual() == "CAD")
+                         TipoActual() == "CAD" ||
+                         TipoActual() == "BOL")
                 {
-                    Error(
-                        "Se esperaba operador relacional " +
-                        "(>, >=, <, <=, <>, ==) entre los valores");
-
-                    comp.Append(" ");
-                    comp.Append(ParseVALOR());
+                    if (TipoActual() == "IDENT" ||
+                        TipoActual() == "BOL")
+                    {
+                        comp.Append(" ");
+                        comp.Append(ParseVALOR());
+                    }
                 }
-                else
+                else if (tipoInicial != "IDENT" &&
+                         tipoInicial != "BOL")
                 {
                     Error(
                         "Se esperaba operador relacional " +
@@ -1587,6 +1596,13 @@ namespace AnalizadorLexico
                 return ObtenerRepresentacionSintaxis(
                     "CAD",
                     valor);
+            }
+            else if (TipoActual() == "BOL")
+            {
+                string valor = TokenActual().Valor;
+                NextToken();
+
+                return valor;
             }
             else
             {
