@@ -581,6 +581,9 @@ namespace AnalizadorLexico
             {
                 if (esNumIzq && esNumDer)
                 {
+                    if (operador == "/")
+                        return "Real";
+
                     return (
                         tipoIzq == "Real" ||
                         tipoDer == "Real")
@@ -1671,9 +1674,7 @@ namespace AnalizadorLexico
                     if (b == 0)
                         return null;
 
-                    return ambosEnteros
-                        ? (object)((int)a / (int)b)
-                        : a / b;
+                    return a / b;
             }
 
             return null;
