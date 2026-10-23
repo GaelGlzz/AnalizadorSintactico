@@ -2266,4 +2266,4 @@ namespace AnalizadorLexico
 
         #endregion
     }
-}
+} 

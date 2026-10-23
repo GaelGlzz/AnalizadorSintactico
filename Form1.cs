@@ -20,8 +20,8 @@ namespace AnalizadorLexico
         private List<string> pilaScopes = new List<string>();
         private Dictionary<string, int> contadoresScopes =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        private List<string> codigoIntermedio = new List<string>();
-        private List<string> codigoOptimizado = new List<string>();
+        private bool analisisAprobado;
+        private readonly GeneradorCodigoP generadorCodigoP = new GeneradorCodigoP();
 
         private string ScopeActual
         {
@@ -33,6 +33,24 @@ namespace AnalizadorLexico
             }
         }
 
+        private void btnGenerarIntermedio_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (!analisisAprobado)
+            {
+                MessageBox.Show(
+                    "Primero debes completar correctamente el análisis léxico, sintáctico y semántico.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            string codigo = generadorCodigoP.Generar(tokensLexico);
+            rtCIntermedio.Text = codigo;
+        }
+
         public Form1()
         {
             InitializeComponent();
@@ -40,15 +58,10 @@ namespace AnalizadorLexico
             lexer = new Lexer();
             lexerDB = new LexerDB();
 
-            label4.Click += label4_Click;
-
-            label5.Click += label5_Click;
-            label5.MouseEnter += label5_MouseEnter;
-            label5.MouseLeave += label5_MouseLeave;
-
             rtbFuente.KeyDown += RtbFuente_KeyDown;
 
             rtbFuente.ReadOnly = false;
+            btnGenerarIntermedio.Enabled = false;
 
             if (!lexerDB.IsMatrizLoaded())
             {
@@ -234,26 +247,6 @@ namespace AnalizadorLexico
 
             dgvErroresSintacticos.Rows[fila]
                 .DefaultCellStyle.ForeColor = Color.DarkOrange;
-        }
-
-        private void GenerarCodigoIntermedio(
-            string destino,
-            List<Token> expresion)
-        {
-            string texto = string.Join(
-                " ",
-                expresion.Select(t => t.Lexema));
-
-            codigoIntermedio.Add(
-                destino + " = " + texto);
-        }
-
-        private void OptimizarCodigoIntermedio()
-        {
-            codigoOptimizado = codigoIntermedio
-                .Where(linea => !string.IsNullOrWhiteSpace(linea))
-                .Distinct()
-                .ToList();
         }
 
         private bool ValidarInicializacion(
@@ -1754,11 +1747,12 @@ namespace AnalizadorLexico
             dgvErrores.Rows.Clear();
             dgvSimbolos.Rows.Clear();
             tablaSimbolos.Clear();
+            analisisAprobado = false;
+            btnGenerarIntermedio.Enabled = false;
+            rtCIntermedio.Clear();
             tokensLexico.Clear();
             pilaScopes.Clear();
             contadoresScopes.Clear();
-            codigoIntermedio.Clear();
-            codigoOptimizado.Clear();
 
             string[] lines =
                 RemoveLineNumbers(rtbFuente.Text)
@@ -1890,10 +1884,6 @@ namespace AnalizadorLexico
                                 "' no está declarada en el scope actual",
                                 "Semántico - Error de alcance");
                         }
-
-                        GenerarCodigoIntermedio(
-                            nombreVar,
-                            tokensExpr);
 
                         string tipoResultado =
                             InferirTipoConPilaSemantica(
@@ -2200,8 +2190,6 @@ namespace AnalizadorLexico
                     Color.Red;
             }
 
-            OptimizarCodigoIntermedio();
-
             rtbFuente.ReadOnly = true;
         }
 
@@ -2349,6 +2337,9 @@ namespace AnalizadorLexico
                     dgvErrores.Rows.Clear();
                     dgvSimbolos.Rows.Clear();
                     tablaSimbolos.Clear();
+                    analisisAprobado = false;
+                    btnGenerarIntermedio.Enabled = false;
+                    rtCIntermedio.Clear();
                 }
             }
         }
@@ -2366,6 +2357,9 @@ namespace AnalizadorLexico
 
             dgvErroresSintacticos.Rows.Clear();
             rtSintaxis.Clear();
+            analisisAprobado = false;
+            btnGenerarIntermedio.Enabled = false;
+            rtCIntermedio.Clear();
         }
 
         private void btnGuardar_Click(
@@ -2448,32 +2442,37 @@ namespace AnalizadorLexico
                     "Errores Léxicos",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
+                analisisAprobado = false;
+                btnGenerarIntermedio.Enabled = false;
             }
             else
             {
                 btnGuardarA.Enabled = true;
 
+                EjecutarSintactico();
+
                 bool hayErroresSintacticos =
-                    EjecutarSintactico();
+                    ContieneErroresSintacticos();
+                bool hayErroresSemanticos =
+                    ContieneErroresDeCategoria("Semántico -");
+                bool hayErroresAnalisis =
+                    hayErroresSintacticos || hayErroresSemanticos;
 
-                if (hayErroresSintacticos)
+                analisisAprobado = !hayErroresAnalisis;
+                btnGenerarIntermedio.Enabled = analisisAprobado;
+
+                if (hayErroresAnalisis)
                 {
-                    bool haySemanticos =
-                        ContieneErroresDeCategoria("Semántico -");
-
-                    bool haySintacticos =
-                        ContieneErroresSintacticos();
-
                     string mensaje;
                     string titulo;
 
-                    if (haySintacticos && haySemanticos)
+                    if (hayErroresSintacticos && hayErroresSemanticos)
                     {
                         mensaje =
                             "Se encontraron errores sintácticos y semánticos.";
                         titulo = "Errores de análisis";
                     }
-                    else if (haySemanticos)
+                    else if (hayErroresSemanticos)
                     {
                         mensaje =
                             "Se encontraron errores semánticos.";
@@ -2495,8 +2494,8 @@ namespace AnalizadorLexico
                 else
                 {
                     MessageBox.Show(
-                        "No se encontraron errores en la sintaxis.",
-                        "Análisis Sintáctico",
+                        "No se encontraron errores.",
+                        "Análisis completo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
                 }
@@ -2802,49 +2801,6 @@ namespace AnalizadorLexico
                     130);
         }
 
-        private void label5_Click(
-            object sender,
-            EventArgs e)
-        {
-            if (!lexerDB.IsMatrizLoaded())
-            {
-                MessageBox.Show(
-                    "La matriz de transición no está disponible. Verifica la conexión a la base de datos.",
-                    "Error BD",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-
-                return;
-            }
-
-            EjecutarSintactico();
-        }
-
-        private void label5_MouseEnter(
-            object sender,
-            EventArgs e)
-        {
-            label5.Cursor =
-                Cursors.Hand;
-
-            label5.BackColor =
-                Color.FromArgb(
-                    187,
-                    222,
-                    251);
-        }
-
-        private void label5_MouseLeave(
-            object sender,
-            EventArgs e)
-        {
-            label5.BackColor =
-                Color.FromArgb(
-                    25,
-                    70,
-                    130);
-        }
-
         private void btnInfo_Click(
             object sender,
             EventArgs e)
@@ -2925,6 +2881,7 @@ namespace AnalizadorLexico
 
         private void label4_Click_1(object sender,EventArgs e)
         {
+            label4_Click(sender, e);
         }
 
         private void dgvErrores_CellContentClick(object sender,DataGridViewCellEventArgs e)
@@ -2942,5 +2899,6 @@ namespace AnalizadorLexico
         private void rtSintaxis_TextChanged(object sender,EventArgs e)
         {
         }
+
     }
 }
