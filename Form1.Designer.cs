@@ -13,7 +13,7 @@ namespace AnalizadorLexico
             base.Dispose(disposing);
         }
 
-        #region Código generado por el Diseñador de Windows Forms
+        #region Cï¿½digo generado por el Diseï¿½ador de Windows Forms
 
         private void InitializeComponent()
         {
@@ -42,12 +42,13 @@ namespace AnalizadorLexico
             this.dgvSimbolos = new System.Windows.Forms.DataGridView();
             this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column6 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Tipo = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Valor = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Scope = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Bytes = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.lblTitulo = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.btnInfo = new System.Windows.Forms.Button();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.label5 = new System.Windows.Forms.Label();
             this.dgvErroresSintacticos = new System.Windows.Forms.DataGridView();
@@ -56,16 +57,21 @@ namespace AnalizadorLexico
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.rtSintaxis = new System.Windows.Forms.RichTextBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.btnCodigoIntermedio = new System.Windows.Forms.Button();
+            this.btnVerIntermedio = new System.Windows.Forms.Button();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.rtCIntermedio = new System.Windows.Forms.RichTextBox();
+            this.btnGenerarIntermedio = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErrores)).BeginInit();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimbolos)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErroresSintacticos)).BeginInit();
             this.groupBox6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -191,7 +197,7 @@ namespace AnalizadorLexico
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(379, 38);
             this.label2.TabIndex = 5;
-            this.label2.Text = "Errores Léxicos";
+            this.label2.Text = "Errores LÃ©xicos";
             this.label2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // dgvErrores
@@ -226,7 +232,7 @@ namespace AnalizadorLexico
             // Linea
             // 
             this.Linea.FillWeight = 20F;
-            this.Linea.HeaderText = "Línea";
+            this.Linea.HeaderText = "Lï¿½nea";
             this.Linea.MinimumWidth = 6;
             this.Linea.Name = "Linea";
             this.Linea.ReadOnly = true;
@@ -297,7 +303,7 @@ namespace AnalizadorLexico
             this.groupBox4.Controls.Add(this.dgvSimbolos);
             this.groupBox4.Location = new System.Drawing.Point(507, 327);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(379, 176);
+            this.groupBox4.Size = new System.Drawing.Size(705, 176);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             // 
@@ -308,9 +314,9 @@ namespace AnalizadorLexico
             this.label3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label3.Location = new System.Drawing.Point(1, -2);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(378, 38);
+            this.label3.Size = new System.Drawing.Size(704, 38);
             this.label3.TabIndex = 6;
-            this.label3.Text = "Tabla de símbolos";
+            this.label3.Text = "Tabla de sÃ­mbolos";
             this.label3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // dgvSimbolos
@@ -331,22 +337,24 @@ namespace AnalizadorLexico
             this.dgvSimbolos.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Column3,
             this.Column4,
-            this.Column5,
-            this.Column6});
+            this.Tipo,
+            this.Valor,
+            this.Scope,
+            this.Bytes});
             this.dgvSimbolos.EnableHeadersVisualStyles = false;
             this.dgvSimbolos.Location = new System.Drawing.Point(13, 52);
             this.dgvSimbolos.Name = "dgvSimbolos";
             this.dgvSimbolos.ReadOnly = true;
             this.dgvSimbolos.RowHeadersVisible = false;
             this.dgvSimbolos.RowHeadersWidth = 51;
-            this.dgvSimbolos.Size = new System.Drawing.Size(351, 102);
+            this.dgvSimbolos.Size = new System.Drawing.Size(677, 102);
             this.dgvSimbolos.TabIndex = 0;
             this.dgvSimbolos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvSimbolos_CellContentClick);
             // 
             // Column3
             // 
             this.Column3.FillWeight = 50F;
-            this.Column3.HeaderText = "Número";
+            this.Column3.HeaderText = "Nï¿½mero";
             this.Column3.MinimumWidth = 6;
             this.Column3.Name = "Column3";
             this.Column3.ReadOnly = true;
@@ -358,21 +366,31 @@ namespace AnalizadorLexico
             this.Column4.Name = "Column4";
             this.Column4.ReadOnly = true;
             // 
-            // Column5
+            // Tipo
             // 
-            this.Column5.FillWeight = 30F;
-            this.Column5.HeaderText = "";
-            this.Column5.MinimumWidth = 6;
-            this.Column5.Name = "Column5";
-            this.Column5.ReadOnly = true;
+            this.Tipo.HeaderText = "Tipo";
+            this.Tipo.MinimumWidth = 8;
+            this.Tipo.Name = "Tipo";
+            this.Tipo.ReadOnly = true;
             // 
-            // Column6
+            // Valor
             // 
-            this.Column6.FillWeight = 30F;
-            this.Column6.HeaderText = "";
-            this.Column6.MinimumWidth = 6;
-            this.Column6.Name = "Column6";
-            this.Column6.ReadOnly = true;
+            this.Valor.HeaderText = "Valor";
+            this.Valor.MinimumWidth = 8;
+            this.Valor.Name = "Valor";
+            this.Valor.ReadOnly = true;
+            // 
+            // Scope
+            // 
+            this.Scope.HeaderText = "Scope";
+            this.Scope.Name = "Scope";
+            this.Scope.ReadOnly = true;
+            // 
+            // Bytes
+            // 
+            this.Bytes.HeaderText = "TamaÃ±o (bytes)";
+            this.Bytes.Name = "Bytes";
+            this.Bytes.ReadOnly = true;
             // 
             // lblTitulo
             // 
@@ -383,7 +401,7 @@ namespace AnalizadorLexico
             this.lblTitulo.Name = "lblTitulo";
             this.lblTitulo.Size = new System.Drawing.Size(466, 37);
             this.lblTitulo.TabIndex = 4;
-            this.lblTitulo.Text = "KaViGex Analizador Sintáctico v1.1";
+            this.lblTitulo.Text = "KaViGex Analizador SintÃ¡ctico v1.7";
             this.lblTitulo.Click += new System.EventHandler(this.lblTitulo_Click_1);
             // 
             // label4
@@ -395,7 +413,7 @@ namespace AnalizadorLexico
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(94, 57);
             this.label4.TabIndex = 5;
-            this.label4.Text = "Sintaxis\r\nAnálisis";
+            this.label4.Text = "Analizar";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.label4.Click += new System.EventHandler(this.label4_Click_1);
             this.label4.MouseEnter += new System.EventHandler(this.label4_MouseEnter);
@@ -406,7 +424,7 @@ namespace AnalizadorLexico
             this.btnInfo.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.btnInfo.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnInfo.Location = new System.Drawing.Point(9, 10);
-            this.btnInfo.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnInfo.Margin = new System.Windows.Forms.Padding(2);
             this.btnInfo.Name = "btnInfo";
             this.btnInfo.Size = new System.Drawing.Size(22, 23);
             this.btnInfo.TabIndex = 6;
@@ -414,23 +432,13 @@ namespace AnalizadorLexico
             this.btnInfo.UseVisualStyleBackColor = true;
             this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
             // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = global::AnalizadorSintactico.Properties.Resources.Logo;
-            this.pictureBox1.InitialImage = null;
-            this.pictureBox1.Location = new System.Drawing.Point(653, 12);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(233, 67);
-            this.pictureBox1.TabIndex = 5;
-            this.pictureBox1.TabStop = false;
-            // 
             // groupBox5
             // 
             this.groupBox5.Controls.Add(this.label5);
             this.groupBox5.Controls.Add(this.dgvErroresSintacticos);
-            this.groupBox5.Location = new System.Drawing.Point(22, 513);
+            this.groupBox5.Location = new System.Drawing.Point(507, 509);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(379, 176);
+            this.groupBox5.Size = new System.Drawing.Size(705, 176);
             this.groupBox5.TabIndex = 6;
             this.groupBox5.TabStop = false;
             // 
@@ -441,9 +449,9 @@ namespace AnalizadorLexico
             this.label5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
             this.label5.Location = new System.Drawing.Point(0, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(379, 38);
+            this.label5.Size = new System.Drawing.Size(705, 38);
             this.label5.TabIndex = 5;
-            this.label5.Text = "Errores Sintácticos";
+            this.label5.Text = "Errores";
             this.label5.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // dgvErroresSintacticos
@@ -471,14 +479,14 @@ namespace AnalizadorLexico
             this.dgvErroresSintacticos.ReadOnly = true;
             this.dgvErroresSintacticos.RowHeadersVisible = false;
             this.dgvErroresSintacticos.RowHeadersWidth = 51;
-            this.dgvErroresSintacticos.Size = new System.Drawing.Size(350, 102);
+            this.dgvErroresSintacticos.Size = new System.Drawing.Size(677, 102);
             this.dgvErroresSintacticos.TabIndex = 0;
             this.dgvErroresSintacticos.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvErroresSintacticos_CellContentClick);
             // 
             // dataGridViewTextBoxColumn1
             // 
             this.dataGridViewTextBoxColumn1.FillWeight = 20F;
-            this.dataGridViewTextBoxColumn1.HeaderText = "Línea";
+            this.dataGridViewTextBoxColumn1.HeaderText = "Lï¿½nea";
             this.dataGridViewTextBoxColumn1.MinimumWidth = 6;
             this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
             this.dataGridViewTextBoxColumn1.ReadOnly = true;
@@ -495,7 +503,7 @@ namespace AnalizadorLexico
             // 
             this.groupBox6.Controls.Add(this.rtSintaxis);
             this.groupBox6.Controls.Add(this.label6);
-            this.groupBox6.Location = new System.Drawing.Point(507, 513);
+            this.groupBox6.Location = new System.Drawing.Point(22, 509);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(379, 176);
             this.groupBox6.TabIndex = 7;
@@ -526,13 +534,68 @@ namespace AnalizadorLexico
             this.label6.Text = "Sintaxis";
             this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
+            // btnCodigoIntermedio
+            // 
+            this.btnCodigoIntermedio.Enabled = false;
+            this.btnCodigoIntermedio.Location = new System.Drawing.Point(938, 161);
+            this.btnCodigoIntermedio.Name = "btnCodigoIntermedio";
+            this.btnCodigoIntermedio.Size = new System.Drawing.Size(243, 60);
+            this.btnCodigoIntermedio.TabIndex = 8;
+            this.btnCodigoIntermedio.Text = "Generar cÃ³digo intermedio";
+            this.btnCodigoIntermedio.UseVisualStyleBackColor = true;
+            this.btnCodigoIntermedio.Click += new System.EventHandler(this.btnCodigoIntermedio_Click);
+            // 
+            // btnVerIntermedio
+            // 
+            this.btnVerIntermedio.Enabled = false;
+            this.btnVerIntermedio.Location = new System.Drawing.Point(938, 227);
+            this.btnVerIntermedio.Name = "btnVerIntermedio";
+            this.btnVerIntermedio.Size = new System.Drawing.Size(243, 74);
+            this.btnVerIntermedio.TabIndex = 9;
+            this.btnVerIntermedio.Text = "Ver cÃ³digo intermedio";
+            this.btnVerIntermedio.UseVisualStyleBackColor = true;
+            this.btnVerIntermedio.Click += new System.EventHandler(this.btnVerIntermedio_Click);
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::AnalizadorSintactico.Properties.Resources.Logo;
+            this.pictureBox1.InitialImage = null;
+            this.pictureBox1.Location = new System.Drawing.Point(653, 12);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(233, 67);
+            this.pictureBox1.TabIndex = 5;
+            this.pictureBox1.TabStop = false;
+            // 
+            // rtCIntermedio
+            // 
+            this.rtCIntermedio.Location = new System.Drawing.Point(999, 12);
+            this.rtCIntermedio.Name = "rtCIntermedio";
+            this.rtCIntermedio.Size = new System.Drawing.Size(100, 34);
+            this.rtCIntermedio.TabIndex = 10;
+            this.rtCIntermedio.Text = "";
+            this.rtCIntermedio.Visible = false;
+            // 
+            // btnGenerarIntermedio
+            // 
+            this.btnGenerarIntermedio.Location = new System.Drawing.Point(938, 30);
+            this.btnGenerarIntermedio.Name = "btnGenerarIntermedio";
+            this.btnGenerarIntermedio.Size = new System.Drawing.Size(41, 16);
+            this.btnGenerarIntermedio.TabIndex = 11;
+            this.btnGenerarIntermedio.Text = "button1";
+            this.btnGenerarIntermedio.UseVisualStyleBackColor = true;
+            this.btnGenerarIntermedio.Visible = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(244)))), ((int)(((byte)(248)))));
-            this.ClientSize = new System.Drawing.Size(928, 749);
+            this.ClientSize = new System.Drawing.Size(1252, 690);
+            this.Controls.Add(this.btnGenerarIntermedio);
+            this.Controls.Add(this.rtCIntermedio);
+            this.Controls.Add(this.btnVerIntermedio);
+            this.Controls.Add(this.btnCodigoIntermedio);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.btnInfo);
@@ -544,9 +607,9 @@ namespace AnalizadorLexico
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
-            this.Text = "KaViGex Analizador Sintáctico v1.1";
+            this.Text = "KaViGex Analizador SintÃ¡ctico v1.7";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
@@ -554,10 +617,10 @@ namespace AnalizadorLexico
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimbolos)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.groupBox5.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvErroresSintacticos)).EndInit();
             this.groupBox6.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -584,10 +647,6 @@ namespace AnalizadorLexico
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.DataGridView dgvSimbolos;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column5;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column6;
         private System.Windows.Forms.Label lblTitulo;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button btnInfo;
@@ -600,5 +659,15 @@ namespace AnalizadorLexico
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.RichTextBox rtSintaxis;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button btnCodigoIntermedio;
+        private System.Windows.Forms.Button btnVerIntermedio;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Tipo;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Valor;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Scope;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Bytes;
+        private System.Windows.Forms.RichTextBox rtCIntermedio;
+        private System.Windows.Forms.Button btnGenerarIntermedio;
     }
 }

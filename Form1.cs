@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,46 +17,344 @@ namespace AnalizadorLexico
         private LexerDB lexerDB;
         private List<Simbolo> tablaSimbolos = new List<Simbolo>();
         private List<Token> tokensLexico = new List<Token>();
+        private List<string> pilaScopes = new List<string>();
+        private Dictionary<string, int> contadoresScopes =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private bool analisisAprobado;
+        private readonly GeneradorCodigoP generadorCodigoP = new GeneradorCodigoP();
+        private CodigoIntermedio codigoIntermedioForm;
+
+        private string ScopeActual
+        {
+            get
+            {
+                return pilaScopes.Count == 0
+                    ? "Global"
+                    : pilaScopes[pilaScopes.Count - 1];
+            }
+        }
+
+        private void btnGenerarIntermedio_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (!analisisAprobado)
+            {
+                MessageBox.Show(
+                    "Primero debes completar correctamente el análisis léxico, sintáctico y semántico.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            string codigo = generadorCodigoP.Generar(tokensLexico);
+            rtCIntermedio.Text = codigo;
+
+            MessageBox.Show(
+                "El código se genero exitosamente y quedará disponible en la vista de código intermedio.",
+                "Código intermedio",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void btnCodigoIntermedio_Click(object sender, EventArgs e)
+        {
+            if (!analisisAprobado)
+            {
+                MessageBox.Show(
+                    "Primero debes completar correctamente el análisis léxico, sintáctico y semántico.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            string codigo = generadorCodigoP.Generar(tokensLexico);
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                MessageBox.Show(
+                    "No se pudo generar el código intermedio del programa actual.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            rtCIntermedio.Text = codigo;
+
+            if (codigoIntermedioForm == null || codigoIntermedioForm.IsDisposed)
+            {
+                codigoIntermedioForm = new CodigoIntermedio();
+            }
+
+            codigoIntermedioForm.CargarCodigo(codigo, rtbFuente.Text);
+            codigoIntermedioForm.Show();
+            codigoIntermedioForm.BringToFront();
+
+            btnVerIntermedio.Enabled = true;
+
+            MessageBox.Show(
+                "El código se genero exitosamente.",
+                "Código intermedio",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void btnVerIntermedio_Click(object sender, EventArgs e)
+        {
+            if (codigoIntermedioForm == null || codigoIntermedioForm.IsDisposed)
+            {
+                codigoIntermedioForm = new CodigoIntermedio();
+            }
+
+            if (!string.IsNullOrWhiteSpace(rtCIntermedio.Text))
+            {
+                codigoIntermedioForm.CargarCodigo(rtCIntermedio.Text, rtbFuente.Text);
+            }
+
+            codigoIntermedioForm.Show();
+            codigoIntermedioForm.BringToFront();
+        }
 
         public Form1()
         {
             InitializeComponent();
+
             lexer = new Lexer();
             lexerDB = new LexerDB();
 
-            // Asociar eventos a los botones (si no están asignados en designer)
-            /*btnCargar.Click += btnCargar_Click;
-            btnEditar.Click += btnEditar_Click;
-            btnGuardar.Click += btnGuardar_Click;
-            btnGuardarA.Click += btnGuardarA_Click;*/
-
-            // Crear botón léxico en runtime (label4 actúa como indicador, creamos click)
-            label4.Click += label4_Click;
-
-            // Crear botón sintáctico en runtime (label5 actúa como indicador, creamos click)
-            label5.Click += label5_Click;
-            label5.MouseEnter += label5_MouseEnter;
-            label5.MouseLeave += label5_MouseLeave;
-
-            // Manejar Tab en rtbFuente para insertar 5 espacios
             rtbFuente.KeyDown += RtbFuente_KeyDown;
 
-            // Inicialmente rtbFuente editable
             rtbFuente.ReadOnly = false;
+            btnGenerarIntermedio.Enabled = false;
+            btnCodigoIntermedio.Enabled = false;
+            btnVerIntermedio.Enabled = false;
 
-            // Verificar que la matriz esté cargada
             if (!lexerDB.IsMatrizLoaded())
             {
                 string msg = "No se pudo cargar la matriz de transición desde la base de datos.";
                 var initErr = lexerDB.GetInitError();
+
                 if (!string.IsNullOrEmpty(initErr))
                     msg += "\nDetalle: " + initErr;
 
-                MessageBox.Show(msg, "Error BD", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    msg,
+                    "Error BD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
 
-                // Desactivar la acción de Léxico
                 label4.Enabled = false;
             }
+
+        }
+
+        private bool EsInicioScope(string categoria)
+        {
+            return ObtenerNombreScope(categoria) != null;
+        }
+
+        private string ObtenerNombreScope(string categoria)
+        {
+            switch (categoria)
+            {
+                case "SI":
+                case "PR5": return "SI";
+                case "SINO":
+                case "PR7": return "SINO";
+                case "REPETIR":
+                case "PR10": return "REPETIR";
+                case "PARA":
+                case "PR12": return "PARA";
+                case "MIENTRAS":
+                case "PR14": return "MIENTRAS";
+                case "FUNCION":
+                case "PR18": return "FUNCION";
+                default: return null;
+            }
+        }
+
+        private void ActualizarScope(List<Token> tokensLinea)
+        {
+            if (tokensLinea == null)
+                return;
+
+            foreach (var token in tokensLinea)
+            {
+                if (token == null || token.EsError)
+                    continue;
+
+                if (token.Categoria == "FIN" ||
+                    token.Categoria == "PR2")
+                {
+                    if (pilaScopes.Count > 0)
+                        pilaScopes.RemoveAt(pilaScopes.Count - 1);
+
+                    continue;
+                }
+
+                string nombreScope =
+                    ObtenerNombreScope(token.Categoria);
+
+                if (nombreScope != null)
+                {
+                    int numero;
+
+                    if (!contadoresScopes.TryGetValue(
+                        nombreScope,
+                        out numero))
+                    {
+                        numero = 0;
+                    }
+
+                    numero++;
+                    contadoresScopes[nombreScope] = numero;
+                    pilaScopes.Add(nombreScope + numero);
+                }
+            }
+        }
+
+        private Simbolo BuscarSimboloVisible(
+            string nombre,
+            List<Simbolo> simbolos)
+        {
+            if (string.IsNullOrEmpty(nombre) || simbolos == null)
+                return null;
+
+            for (int i = pilaScopes.Count; i >= 0; i--)
+            {
+                string scope = i == 0
+                    ? "Global"
+                    : pilaScopes[i - 1];
+
+                var simbolo = simbolos.LastOrDefault(
+                    s => s.Nombre.Equals(
+                        nombre,
+                        StringComparison.OrdinalIgnoreCase) &&
+                         string.Equals(
+                             s.Scope,
+                             scope,
+                             StringComparison.OrdinalIgnoreCase));
+
+                if (simbolo != null)
+                    return simbolo;
+            }
+
+            return null;
+        }
+
+        private void RegistrarSimbolo(Token token, bool esDeclaracion)
+        {
+            if (token == null ||
+                token.EsError ||
+                token.Categoria != "IDENT" ||
+                !esDeclaracion)
+            {
+                return;
+            }
+
+            var existente = tablaSimbolos.FirstOrDefault(
+                s => s.Nombre.Equals(
+                    token.Lexema,
+                    StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(
+                         s.Scope,
+                         ScopeActual,
+                         StringComparison.OrdinalIgnoreCase));
+
+            if (existente != null)
+                return;
+
+            tablaSimbolos.Add(new Simbolo
+            {
+                NumID = tablaSimbolos.Count + 1,
+                Nombre = token.Lexema,
+                Tipo = string.Empty,
+                Valor = string.Empty,
+                Scope = ScopeActual
+            });
+        }
+
+        private int ObtenerTamanoBytes(string tipo, string valor)
+        {
+            switch (tipo)
+            {
+                case "Booleano": return 1;
+                case "Entero": return 4;
+                case "Real": return 8;
+                case "Cadena":
+                    return string.IsNullOrEmpty(valor)
+                        ? 0
+                        : Encoding.UTF8.GetByteCount(valor);
+                default: return 0;
+            }
+        }
+
+        private void ActualizarTamanoSimbolo(Simbolo simbolo)
+        {
+            if (simbolo == null)
+                return;
+
+            simbolo.TamanoBytes = ObtenerTamanoBytes(
+                simbolo.Tipo,
+                simbolo.Valor);
+        }
+
+        private void AgregarErrorSemantico(
+            int numeroLinea,
+            string mensaje,
+            string categoria)
+        {
+            if (dgvErroresSintacticos == null)
+                return;
+
+            int fila = dgvErroresSintacticos.Rows.Add(
+                numeroLinea,
+                categoria + ": " + mensaje);
+
+            dgvErroresSintacticos.Rows[fila]
+                .DefaultCellStyle.ForeColor = Color.DarkOrange;
+        }
+
+        private bool ValidarInicializacion(
+            List<Token> expresion,
+            int numeroLinea)
+        {
+            bool valida = true;
+
+            foreach (var token in expresion)
+            {
+                if (token.Categoria != "IDENT")
+                    continue;
+
+                var simbolo = BuscarSimboloVisible(
+                    token.Lexema,
+                    tablaSimbolos);
+
+                if (simbolo == null)
+                {
+                    AgregarErrorSemantico(
+                        numeroLinea,
+                        "La variable '" + token.Lexema +
+                        "' no está declarada en un scope visible",
+                        "Semántico - Error de alcance");
+                    valida = false;
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(simbolo.Valor))
+                {
+                    AgregarErrorSemantico(
+                        numeroLinea,
+                        "La variable '" + token.Lexema +
+                        "' se utiliza sin inicializar",
+                        "Semántico - Error de inicialización");
+                    valida = false;
+                }
+            }
+
+            return valida;
         }
 
         private string ObtenerDefinicion(string categoria)
@@ -86,23 +385,34 @@ namespace AnalizadorLexico
                 case "SINO": return "Rama alternativa de condicional";
                 case "VAR": return "Declaración de variable";
                 case "Y": return "Operador lógico AND";
+
                 case "CN ENTEROS": return "Constante numérica entera";
                 case "CN REALES": return "Constante numérica real";
                 case "CN CON EXPONENTE": return "Constante numérica con exponente";
+
+                case "Entero": return "Tipo de dato: Entero";
+                case "Real": return "Tipo de dato: Real";
+                case "Cadena": return "Tipo de dato: Cadena";
+                case "Booleano": return "Tipo de dato: Booleano";
+
                 case "COMEN": return "Comentario";
                 case "CAD": return "Cadena de caracteres";
+
                 case "OA1": return "Operador aritmético: + (suma)";
                 case "OA2": return "Operador aritmético: - (resta)";
                 case "OA3": return "Operador aritmético: * (multiplicación)";
                 case "OA4": return "Operador aritmético: / (división)";
+
                 case "OR1": return "Operador relacional: > (mayor que)";
                 case "OR2": return "Operador relacional: >= (mayor o igual que)";
                 case "OR3": return "Operador relacional: < (menor que)";
                 case "OR4": return "Operador relacional: <= (menor o igual que)";
                 case "OR5": return "Operador relacional: <> (distinto de)";
                 case "OR6": return "Operador relacional: == (igual que)";
+
                 case "ASI": return "Operador de asignación: =";
                 case "IDENT": return "Identificador (formato: pXxxx)";
+
                 case "CE1": return "Carácter especial: ( (paréntesis abierto)";
                 case "CE2": return "Carácter especial: ) (paréntesis cerrado)";
                 case "CE3": return "Carácter especial: { (llave abierta)";
@@ -126,119 +436,1378 @@ namespace AnalizadorLexico
                 case "CE21": return "Carácter especial: \\ (barra invertida)";
                 case "CE22": return "Carácter especial: ` (acento grave)";
                 case "CE23": return "Carácter especial: ! (Signo de exclamación)";
+
+                default:
+                    return categoria;
+            }
+        }
+
+        // ============================================================
+        // INFERENCIA DE TIPOS
+        // ============================================================
+
+        private string InferirTipoDeAsignacion(
+            List<Token> tokensExpr,
+            List<Simbolo> tablaSimbolos,
+            int numeroLinea)
+        {
+            if (tokensExpr == null || tokensExpr.Count == 0)
+            {
+                AgregarErrorSemantico(
+                    numeroLinea,
+                    "Expresión vacía o incompleta",
+                    "Semántico - Error en expresión");
+
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                    .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                return "Error";
+            }
+
+            bool tieneReal = false;
+            bool tieneEntero = false;
+
+            var tiposIdentificadores =
+                new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase);
+
+            foreach (var t in tokensExpr)
+            {
+                if (t == null)
+                    continue;
+
+                if (t.Categoria == "CAD")
+                    return "Cadena";
+
+                if (t.Categoria == "CN REALES" ||
+                    t.Categoria == "CN CON EXPONENTE")
+                {
+                    tieneReal = true;
+                }
+                else if (t.Categoria == "CN ENTEROS")
+                {
+                    tieneEntero = true;
+                }
+                else if (t.Categoria == "IDENT")
+                {
+                    var sym = BuscarSimboloVisible(
+                        t.Lexema,
+                        tablaSimbolos);
+
+                    if (sym == null ||
+                        string.IsNullOrEmpty(sym.Tipo) ||
+                        sym.Tipo == "Sin determinar")
+                    {
+                        AgregarErrorSemantico(
+                            numeroLinea,
+                            $"Tipo desconocido para el identificador '{t.Lexema}'",
+                            "Semántico - Tipo desconocido");
+
+                        dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                            .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                        return "Error";
+                    }
+
+                    tiposIdentificadores.Add(sym.Tipo);
+                }
+            }
+
+            if (tiposIdentificadores.Count > 0)
+            {
+                if (tiposIdentificadores.Count == 1)
+                {
+                    var tipoId = tiposIdentificadores.First();
+
+                    if (tieneReal)
+                        return "Real";
+
+                    if (tieneEntero)
+                        return tipoId.IndexOf(
+                            "Real",
+                            StringComparison.OrdinalIgnoreCase) >= 0
+                            ? "Real"
+                            : tipoId;
+
+                    return tipoId;
+                }
+
+                return "Error";
+            }
+
+            if (tieneReal)
+                return "Real";
+
+            if (tieneEntero)
+                return "Entero";
+
+            return "Error";
+        }
+
+        private string InferirTipoDato(string categoria)
+        {
+            switch (categoria)
+            {
+                case "CN ENTEROS":
+                    return "Entero";
+
+                case "CN REALES":
+                    return "Real";
+
+                case "CN CON EXPONENTE":
+                    return "Real";
+
+                case "CAD":
+                    return "Cadena";
+
+                case "BOOLEANO":
+                    return "Booleano";
+
+                case "IDENT":
+                    return "Referencia";
+
+                default:
+                    return "Desconocido";
+            }
+        }
+
+        private string TipoDeOperando(
+            Token token,
+            List<Simbolo> tablaSimbolos)
+        {
+            switch (token.Categoria)
+            {
+                case "CN ENTEROS":
+                    return "Entero";
+
+                case "CN REALES":
+                    return "Real";
+
+                case "CN CON EXPONENTE":
+                    return "Real";
+
+                case "CAD":
+                    return "Cadena";
+
+                case "BOOLEANO":
+                    return "Booleano";
+
+                case "IDENT":
+                    var s = BuscarSimboloVisible(
+                        token.Lexema,
+                        tablaSimbolos);
+
+                    return (
+                        s != null &&
+                        !string.IsNullOrEmpty(s.Tipo) &&
+                        s.Tipo != "Sin determinar")
+                        ? s.Tipo
+                        : "Desconocido";
+
+                default:
+                    return "Desconocido";
+            }
+        }
+
+        // ============================================================
+        // COMBINACIÓN DE TIPOS
+        // ============================================================
+
+        private string CombinarTipos(
+            string tipoIzq,
+            string operador,
+            string tipoDer,
+            out bool esError)
+        {
+            esError = false;
+
+            if (tipoIzq == "Desconocido" ||
+                tipoDer == "Desconocido")
+            {
+                return "Desconocido";
+            }
+
+            bool esNumIzq =
+                tipoIzq == "Entero" ||
+                tipoIzq == "Real";
+
+            bool esNumDer =
+                tipoDer == "Entero" ||
+                tipoDer == "Real";
+
+            if (operador == "+" ||
+                operador == "-" ||
+                operador == "*" ||
+                operador == "/")
+            {
+                if (esNumIzq && esNumDer)
+                {
+                    if (operador == "/")
+                        return "Real";
+
+                    return (
+                        tipoIzq == "Real" ||
+                        tipoDer == "Real")
+                        ? "Real"
+                        : "Entero";
+                }
+
+                if (operador == "+" &&
+                    (tipoIzq == "Cadena" || tipoDer == "Cadena"))
+                {
+                    return "Cadena";
+                }
+
+                esError = true;
+                return "Error";
+            }
+
+            if (operador == ">" ||
+                operador == ">=" ||
+                operador == "<" ||
+                operador == "<=" ||
+                operador == "<>" ||
+                operador == "==")
+            {
+                bool comparablesNum =
+                    esNumIzq && esNumDer;
+
+                bool comparablesCad =
+                    tipoIzq == "Cadena" &&
+                    tipoDer == "Cadena";
+
+                if (comparablesNum || comparablesCad)
+                    return "Booleano";
+
+                esError = true;
+                return "Error";
+            }
+
+            string opLower = operador.ToLower();
+
+            if (opLower == "y" ||
+                opLower == "o" ||
+                opLower == "and" ||
+                opLower == "or")
+            {
+                if (tipoIzq == "Booleano" &&
+                    tipoDer == "Booleano")
+                {
+                    return "Booleano";
+                }
+
+                esError = true;
+                return "Error";
+            }
+
+            esError = true;
+            return "Error";
+        }
+
+        // ============================================================
+        // CONDICIONES
+        // ============================================================
+
+        private string InferirTipoCondicion(
+            List<Token> tokensExpr,
+            List<Simbolo> tablaSimbolos,
+            int numeroLinea)
+        {
+            if (tokensExpr.Count == 0)
+                return "Desconocido";
+
+            int idx = 0;
+
+            string resultado = ParseOperandoCondicion(
+                tokensExpr,
+                ref idx,
+                tablaSimbolos,
+                numeroLinea);
+
+            while (idx < tokensExpr.Count)
+            {
+                Token opToken = tokensExpr[idx];
+
+                if (opToken.Categoria != "Y" &&
+                    opToken.Categoria != "O")
+                {
+                    break;
+
+                }
+
+                idx++;
+
+                string siguiente = ParseOperandoCondicion(
+                    tokensExpr,
+                    ref idx,
+                    tablaSimbolos,
+                    numeroLinea);
+
+                bool esError;
+
+                resultado = CombinarTipos(
+                    resultado,
+                    opToken.Lexema.ToLower(),
+                    siguiente,
+                    out esError);
+
+                if (esError)
+                {
+                    string mensaje =
+                        $"Operador lógico '{opToken.Lexema}' requiere operandos booleanos";
+
+                    AgregarErrorSemantico(
+                        numeroLinea,
+                        mensaje,
+                        "Semántico - Tipos incompatibles");
+
+                    dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                        .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                    return "Error";
+                }
+            }
+
+            return resultado;
+        }
+
+        private string ParseOperandoCondicion(
+            List<Token> tokens,
+            ref int idx,
+            List<Simbolo> tablaSimbolos,
+            int numeroLinea)
+        {
+            bool negado = false;
+
+            if (idx < tokens.Count &&
+                tokens[idx].Categoria == "NO")
+            {
+                negado = true;
+                idx++;
+            }
+
+            if (idx >= tokens.Count)
+            {
+                Error_TipoCondicionVacia(numeroLinea);
+                return "Error";
+            }
+
+            string tipoIzq =
+                TipoDeOperando(
+                    tokens[idx],
+                    tablaSimbolos);
+
+            idx++;
+
+            string resultado;
+
+            if (idx < tokens.Count &&
+                EsOperadorRelacional(
+                    tokens[idx].Categoria))
+            {
+                string opRelacional =
+                    tokens[idx].Lexema;
+
+                idx++;
+
+                if (idx >= tokens.Count)
+                {
+                    resultado = "Error";
+                }
+                else
+                {
+                    string tipoDer =
+                        TipoDeOperando(
+                            tokens[idx],
+                            tablaSimbolos);
+
+                    idx++;
+
+                    bool esError;
+
+                    resultado = CombinarTipos(
+                        tipoIzq,
+                        opRelacional,
+                        tipoDer,
+                        out esError);
+
+                    if (esError)
+                    {
+                        string mensaje =
+                            $"Comparación no válida: '{tipoIzq}' {opRelacional} '{tipoDer}'";
+
+                        AgregarErrorSemantico(
+                            numeroLinea,
+                            mensaje,
+                            "Semántico - Tipos incompatibles");
+
+                        dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                            .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                        resultado = "Error";
+                    }
+                }
+            }
+            else
+            {
+                resultado = tipoIzq;
+            }
+
+            return negado
+                ? (resultado == "Booleano"
+                    ? "Booleano"
+                    : "Error")
+                : resultado;
+        }
+
+        private bool EsOperadorRelacional(string categoria)
+        {
+            return categoria == "OR1" ||
+                   categoria == "OR2" ||
+                   categoria == "OR3" ||
+                   categoria == "OR4" ||
+                   categoria == "OR5" ||
+                   categoria == "OR6";
+        }
+
+        // ============================================================
+        // PILA SEMÁNTICA
+        // ============================================================
+
+        private int PrecedenciaOperador(string categoria)
+        {
+            switch (categoria)
+            {
+                case "NO":
+                    return 5;
+
+                case "OA3":
+                case "OA4":
+                    return 4;
+
+                case "OA1":
+                case "OA2":
+                    return 3;
+
+                case "OR1":
+                case "OR2":
+                case "OR3":
+                case "OR4":
+                case "OR5":
+                case "OR6":
+                    return 2;
+
+                case "Y":
+                    return 1;
+
+                case "O":
+                    return 0;
+
+                default:
+                    return -1;
+            }
+        }
+
+        private bool EsOperadorValido(string categoria)
+        {
+            return categoria == "OA1" ||
+                   categoria == "OA2" ||
+                   categoria == "OA3" ||
+                   categoria == "OA4" ||
+                   EsOperadorRelacional(categoria) ||
+                   categoria == "Y" ||
+                   categoria == "O" ||
+                   categoria == "NO";
+        }
+
+        private string ObtenerSimboloOperador(string categoria)
+        {
+            switch (categoria)
+            {
+                case "OA1": return "+";
+                case "OA2": return "-";
+                case "OA3": return "*";
+                case "OA4": return "/";
+                case "OR1": return ">";
+                case "OR2": return ">=";
+                case "OR3": return "<";
+                case "OR4": return "<=";
+                case "OR5": return "<>";
+                case "OR6": return "==";
+                case "Y": return "y";
+                case "O": return "o";
                 default: return categoria;
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private bool AplicarOperador(
+            string operador,
+            Stack<string> pilaTipos,
+            int numeroLinea)
         {
-            string msg;
-            bool ok = lexerDB.TestConnection(out msg);
-            if (ok)
-                MessageBox.Show("Conexión exitosa a la base de datos.", "Prueba BD", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            else
-                MessageBox.Show("Error de conexión a la base de datos:\n" + msg, "Prueba BD", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        
-        }
-
-        // Cargar Programa
-        private void btnCargar_Click(object sender, EventArgs e)
-        {
-            using (OpenFileDialog ofd = new OpenFileDialog())
+            if (operador == "NO")
             {
-                ofd.Filter = "Text Files|*.txt";
-                if (ofd.ShowDialog() == DialogResult.OK)
+                if (pilaTipos.Count < 1)
                 {
-                    string content = File.ReadAllText(ofd.FileName, Encoding.UTF8);
-                    rtbFuente.Text = AddLineNumbers(content);
-                    rtbFuente.ReadOnly = true; // bloquear después de cargar
-
-                    // limpiar anteriores
-                    rtbTokens.Clear();
-                    dgvErrores.Rows.Clear();
-                    dgvSimbolos.Rows.Clear();
-                    tablaSimbolos.Clear();
+                    Error_TipoCondicionVacia(numeroLinea);
+                    pilaTipos.Push("Error");
+                    return false;
                 }
-            }
-        }
 
-        // Editar Programa
-        private void btnEditar_Click(object sender, EventArgs e)
-        {
-            rtbFuente.ReadOnly = false;
-            rtbTokens.Clear();
-            dgvErrores.Rows.Clear();
-            dgvSimbolos.Rows.Clear();
-            tablaSimbolos.Clear();
-            dgvErroresSintacticos.Rows.Clear();
-            rtSintaxis.Clear();
-        }
+                string operando = pilaTipos.Pop();
 
-        // Guardar Programa Fuente
-        private void btnGuardar_Click(object sender, EventArgs e)
-        {
-            using (SaveFileDialog sfd = new SaveFileDialog())
-            {
-                sfd.Filter = "Text Files|*.txt";
-                if (sfd.ShowDialog() == DialogResult.OK)
+                if (operando == "Booleano")
                 {
-                    // quitar numeración de líneas al guardar
-                    string text = RemoveLineNumbers(rtbFuente.Text);
-                    File.WriteAllText(sfd.FileName, text, Encoding.UTF8);
+                    pilaTipos.Push("Booleano");
+                    return true;
                 }
+
+                string mensajeNo =
+                    $"El operador 'NO' requiere un operando Booleano, se obtuvo '{operando}'";
+
+                AgregarErrorSemantico(
+                    numeroLinea,
+                    mensajeNo,
+                    "Semántico - Tipos incompatibles");
+
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                    .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                pilaTipos.Push("Error");
+                return false;
             }
+
+            if (pilaTipos.Count < 2)
+            {
+                Error_TipoCondicionVacia(numeroLinea);
+                pilaTipos.Push("Error");
+                return false;
+            }
+
+            string tipoDer = pilaTipos.Pop();
+            string tipoIzq = pilaTipos.Pop();
+
+            string simbolo =
+                ObtenerSimboloOperador(operador);
+
+            bool esError;
+
+            string resultado =
+                CombinarTipos(
+                    tipoIzq,
+                    simbolo,
+                    tipoDer,
+                    out esError);
+
+            if (esError)
+            {
+                string mensaje =
+                    $"Operación no válida: '{tipoIzq}' {simbolo} '{tipoDer}'";
+
+                AgregarErrorSemantico(
+                    numeroLinea,
+                    mensaje,
+                    "Semántico - Tipos incompatibles");
+
+                dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                    .DefaultCellStyle.ForeColor = Color.DarkOrange;
+
+                pilaTipos.Push("Error");
+                return false;
+            }
+
+            pilaTipos.Push(resultado);
+            return true;
         }
 
-        // Guardar Archivo Tokens
-        private void btnGuardarA_Click(object sender, EventArgs e)
+        private void Error_TipoCondicionVacia(int numeroLinea)
         {
-            using (SaveFileDialog sfd = new SaveFileDialog())
+                AgregarErrorSemantico(
+                numeroLinea,
+                "Expresión vacía o mal formada",
+                "Semántico - Expresión inválida");
+
+            dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                .DefaultCellStyle.ForeColor = Color.DarkOrange;
+        }
+
+        private string InferirTipoConPilaSemantica(
+            List<Token> tokensExpr,
+            List<Simbolo> tablaSimbolos,
+            int numeroLinea)
+        {
+            if (tokensExpr.Count == 0)
+                return "Desconocido";
+
+            Stack<string> pilaTipos =
+                new Stack<string>();
+
+            Stack<string> pilaOperadores =
+                new Stack<string>();
+
+            foreach (var token in tokensExpr)
             {
-                sfd.Filter = "Text Files|*.txt";
-                sfd.FileName = "tokens.txt";
-                if (sfd.ShowDialog() == DialogResult.OK)
+                if (token.Categoria == "CE7")
                 {
-                    File.WriteAllText(sfd.FileName, rtbTokens.Text, Encoding.UTF8);
+                    pilaOperadores.Push("(");
                 }
-            }
-        }
-
-        // Click en label4 (ejecuta Léxico)
-        private void label4_Click(object sender, EventArgs e)
-        {
-            if (!lexerDB.IsMatrizLoaded())
-            {
-                MessageBox.Show("La matriz de transición no está disponible. Verifica la conexión a la base de datos.", "Error BD", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            EjecutarLexico();
-
-            // Verificar si hay errores léxicos
-            if (dgvErrores.Rows.Count > 0)
-            {
-                // Hay errores léxicos: deshabilitar btnGuardarA, limpiar errores sintácticos y rtSintaxis
-                btnGuardarA.Enabled = false;
-                dgvErroresSintacticos.Rows.Clear();
-                rtSintaxis.Clear();
-                MessageBox.Show("Se encontraron errores léxicos. No se puede ejecutar el análisis sintáctico.", "Errores Léxicos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            else
-            {
-                // No hay errores léxicos: ejecutar análisis sintáctico
-                btnGuardarA.Enabled = true;
-                bool hayErroresSintacticos = EjecutarSintactico();
-
-                if (hayErroresSintacticos)
+                else if (token.Categoria == "CE8")
                 {
-                    MessageBox.Show("Se encontraron errores en la sintaxis.", "Errores Sintácticos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    while (pilaOperadores.Count > 0 &&
+                           pilaOperadores.Peek() != "(")
+                    {
+                        string op =
+                            pilaOperadores.Pop();
+
+                        if (!AplicarOperador(
+                            op,
+                            pilaTipos,
+                            numeroLinea))
+                        {
+                            return "Error";
+                        }
+                    }
+
+                    if (pilaOperadores.Count > 0)
+                        pilaOperadores.Pop();
+                }
+                else if (EsOperadorValido(token.Categoria))
+                {
+                    while (pilaOperadores.Count > 0 &&
+                           pilaOperadores.Peek() != "(" &&
+                           PrecedenciaOperador(
+                               pilaOperadores.Peek()) >=
+                           PrecedenciaOperador(
+                               token.Categoria))
+                    {
+                        string op =
+                            pilaOperadores.Pop();
+
+                        if (!AplicarOperador(
+                            op,
+                            pilaTipos,
+                            numeroLinea))
+                        {
+                            return "Error";
+                        }
+                    }
+
+                    pilaOperadores.Push(
+                        token.Categoria);
                 }
                 else
                 {
-                    MessageBox.Show("No se encontraron errores en la sintaxis.", "Análisis Sintáctico", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    pilaTipos.Push(
+                        TipoDeOperando(
+                            token,
+                            tablaSimbolos));
                 }
             }
+
+            while (pilaOperadores.Count > 0)
+            {
+                string op =
+                    pilaOperadores.Pop();
+
+                if (op == "(")
+                    continue;
+
+                if (!AplicarOperador(
+                    op,
+                    pilaTipos,
+                    numeroLinea))
+                {
+                    return "Error";
+                }
+            }
+
+            if (pilaTipos.Count == 0)
+                return "Desconocido";
+
+            return pilaTipos.Pop();
         }
+
+        // ============================================================
+        // EVALUACIÓN REAL DE VALORES
+        // ============================================================
+
+        private object ObtenerValorOperando(
+            Token token,
+            List<Simbolo> simbolos)
+        {
+            if (token == null)
+                return null;
+
+            switch (token.Categoria)
+            {
+                case "IDENT":
+                    var simbolo = BuscarSimboloVisible(
+                        token.Lexema,
+                        simbolos);
+
+                    if (simbolo == null ||
+                        simbolo.Valor == null ||
+                        string.IsNullOrWhiteSpace(
+                            simbolo.Valor.ToString()))
+                    {
+                        return null;
+                    }
+
+                    return ConvertirValorTexto(
+                        simbolo.Valor.ToString(),
+                        simbolo.Tipo);
+
+                case "CN ENTEROS":
+                    if (int.TryParse(
+                        token.Lexema,
+                        NumberStyles.Integer,
+                        CultureInfo.InvariantCulture,
+                        out int entero))
+                    {
+                        return entero;
+                    }
+                    break;
+
+                case "CN REALES":
+                case "CN CON EXPONENTE":
+                    if (double.TryParse(
+                        token.Lexema,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out double real))
+                    {
+                        return real;
+                    }
+                    break;
+
+                case "BOOLEANO":
+                    return token.Lexema.Equals(
+                        "verdadero",
+                        StringComparison.OrdinalIgnoreCase);
+
+                case "CAD":
+                    string cadena = token.Lexema;
+
+                    if (cadena.Length >= 2 &&
+                        ((cadena.StartsWith("'") &&
+                          cadena.EndsWith("'")) ||
+                         (cadena.StartsWith("\"") &&
+                          cadena.EndsWith("\""))))
+                    {
+                        cadena =
+                            cadena.Substring(
+                                1,
+                                cadena.Length - 2);
+                    }
+
+                    return cadena;
+            }
+
+            return null;
+        }
+
+        private object ConvertirValorTexto(
+            string valor,
+            string tipo)
+        {
+            if (string.IsNullOrWhiteSpace(valor))
+                return null;
+
+            valor = valor.Trim();
+
+            if (tipo == "Booleano")
+            {
+                if (bool.TryParse(
+                    valor,
+                    out bool booleano))
+                {
+                    return booleano;
+                }
+            }
+
+            if (tipo == "Entero")
+            {
+                if (int.TryParse(
+                    valor,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int entero))
+                {
+                    return entero;
+                }
+            }
+
+            if (tipo == "Real")
+            {
+                if (double.TryParse(
+                    valor,
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out double real))
+                {
+                    return real;
+                }
+            }
+
+            if (tipo == "Cadena")
+            {
+                if (valor.Length >= 2 &&
+                    ((valor.StartsWith("'") &&
+                      valor.EndsWith("'")) ||
+                     (valor.StartsWith("\"") &&
+                      valor.EndsWith("\""))))
+                {
+                    return valor.Substring(
+                        1,
+                        valor.Length - 2);
+                }
+
+                return valor;
+            }
+
+            return valor;
+        }
+
+        private bool EsExpresionBooleana(
+            List<Token> tokensExpr)
+        {
+            if (tokensExpr == null)
+                return false;
+
+            foreach (var token in tokensExpr)
+            {
+                if (token == null)
+                    continue;
+
+                if (EsOperadorRelacional(
+                        token.Categoria) ||
+                    token.Categoria == "Y" ||
+                    token.Categoria == "O" ||
+                    token.Categoria == "NO")
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool EvaluarExpresionBooleana(
+            List<Token> tokensExpr,
+            List<Simbolo> simbolos,
+            int numeroLinea)
+        {
+            try
+            {
+                int indice = 0;
+
+                return EvaluarOperacionO(
+                    tokensExpr,
+                    ref indice,
+                    simbolos,
+                    numeroLinea);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool EvaluarOperacionO(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos,
+            int numeroLinea)
+        {
+            bool resultado =
+                EvaluarOperacionY(
+                    tokens,
+                    ref indice,
+                    simbolos,
+                    numeroLinea);
+
+            while (indice < tokens.Count &&
+                   tokens[indice].Categoria == "O")
+            {
+                indice++;
+
+                bool derecha =
+                    EvaluarOperacionY(
+                        tokens,
+                        ref indice,
+                        simbolos,
+                        numeroLinea);
+
+                resultado =
+                    resultado || derecha;
+            }
+
+            return resultado;
+        }
+
+        private bool EvaluarOperacionY(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos,
+            int numeroLinea)
+        {
+            bool resultado =
+                EvaluarOperacionNo(
+                    tokens,
+                    ref indice,
+                    simbolos,
+                    numeroLinea);
+
+            while (indice < tokens.Count &&
+                   tokens[indice].Categoria == "Y")
+            {
+                indice++;
+
+                bool derecha =
+                    EvaluarOperacionNo(
+                        tokens,
+                        ref indice,
+                        simbolos,
+                        numeroLinea);
+
+                resultado =
+                    resultado && derecha;
+            }
+
+            return resultado;
+        }
+
+        private bool EvaluarOperacionNo(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos,
+            int numeroLinea)
+        {
+            if (indice < tokens.Count &&
+                tokens[indice].Categoria == "NO")
+            {
+                indice++;
+
+                return !EvaluarOperacionNo(
+                    tokens,
+                    ref indice,
+                    simbolos,
+                    numeroLinea);
+            }
+
+            return EvaluarFactorBooleano(
+                tokens,
+                ref indice,
+                simbolos,
+                numeroLinea);
+        }
+
+        private bool EvaluarFactorBooleano(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos,
+            int numeroLinea)
+        {
+            if (indice >= tokens.Count)
+                return false;
+
+            if (tokens[indice].Categoria == "CE7")
+            {
+                indice++;
+
+                bool resultado =
+                    EvaluarOperacionO(
+                        tokens,
+                        ref indice,
+                        simbolos,
+                        numeroLinea);
+
+                if (indice < tokens.Count &&
+                    tokens[indice].Categoria == "CE8")
+                {
+                    indice++;
+                }
+
+                return resultado;
+            }
+
+            object izquierda =
+                ObtenerValorOperando(
+                    tokens[indice],
+                    simbolos);
+
+            indice++;
+
+            if (indice >= tokens.Count ||
+                !EsOperadorRelacional(
+                    tokens[indice].Categoria))
+            {
+                if (izquierda is bool)
+                    return (bool)izquierda;
+
+                return false;
+            }
+
+            string operador =
+                tokens[indice].Categoria;
+
+            indice++;
+
+            if (indice >= tokens.Count)
+                return false;
+
+            object derecha =
+                ObtenerValorOperando(
+                    tokens[indice],
+                    simbolos);
+
+            indice++;
+
+            return CompararValores(
+                izquierda,
+                derecha,
+                operador);
+        }
+
+        private bool CompararValores(
+            object izquierda,
+            object derecha,
+            string operador)
+        {
+            if (izquierda == null ||
+                derecha == null)
+            {
+                return false;
+            }
+
+            bool izquierdaNumerica =
+                izquierda is int ||
+                izquierda is double ||
+                izquierda is float ||
+                izquierda is decimal;
+
+            bool derechaNumerica =
+                derecha is int ||
+                derecha is double ||
+                derecha is float ||
+                derecha is decimal;
+
+            if (izquierdaNumerica &&
+                derechaNumerica)
+            {
+                double a =
+                    Convert.ToDouble(
+                        izquierda,
+                        CultureInfo.InvariantCulture);
+
+                double b =
+                    Convert.ToDouble(
+                        derecha,
+                        CultureInfo.InvariantCulture);
+
+                switch (operador)
+                {
+                    case "OR1": return a > b;
+                    case "OR2": return a >= b;
+                    case "OR3": return a < b;
+                    case "OR4": return a <= b;
+                    case "OR5": return a != b;
+                    case "OR6": return a == b;
+                }
+            }
+
+            if (izquierda is string &&
+                derecha is string)
+            {
+                int comparacion =
+                    string.Compare(
+                        izquierda.ToString(),
+                        derecha.ToString(),
+                        StringComparison.Ordinal);
+
+                switch (operador)
+                {
+                    case "OR1": return comparacion > 0;
+                    case "OR2": return comparacion >= 0;
+                    case "OR3": return comparacion < 0;
+                    case "OR4": return comparacion <= 0;
+                    case "OR5": return comparacion != 0;
+                    case "OR6": return comparacion == 0;
+                }
+            }
+
+            if (izquierda is bool &&
+                derecha is bool)
+            {
+                bool a = (bool)izquierda;
+                bool b = (bool)derecha;
+
+                if (operador == "OR6")
+                    return a == b;
+
+                if (operador == "OR5")
+                    return a != b;
+            }
+
+            return false;
+        }
+
+        // ============================================================
+        // EVALUACIÓN ARITMÉTICA
+        // ============================================================
+
+        private object EvaluarExpresionAritmetica(
+            List<Token> tokensExpr,
+            List<Simbolo> simbolos)
+        {
+            try
+            {
+                int indice = 0;
+
+                return EvaluarSumaResta(
+                    tokensExpr,
+                    ref indice,
+                    simbolos);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private object EvaluarSumaResta(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos)
+        {
+            object resultado =
+                EvaluarMultiplicacionDivision(
+                    tokens,
+                    ref indice,
+                    simbolos);
+
+            while (indice < tokens.Count &&
+                  (tokens[indice].Categoria == "OA1" ||
+                   tokens[indice].Categoria == "OA2"))
+            {
+                string operador =
+                    tokens[indice].Categoria;
+
+                indice++;
+
+                object derecha =
+                    EvaluarMultiplicacionDivision(
+                        tokens,
+                        ref indice,
+                        simbolos);
+
+                resultado =
+                    AplicarOperacionAritmetica(
+                        resultado,
+                        derecha,
+                        operador);
+            }
+
+            return resultado;
+        }
+
+        private object EvaluarMultiplicacionDivision(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos)
+        {
+            object resultado =
+                EvaluarFactorAritmetico(
+                    tokens,
+                    ref indice,
+                    simbolos);
+
+            while (indice < tokens.Count &&
+                  (tokens[indice].Categoria == "OA3" ||
+                   tokens[indice].Categoria == "OA4"))
+            {
+                string operador =
+                    tokens[indice].Categoria;
+
+                indice++;
+
+                object derecha =
+                    EvaluarFactorAritmetico(
+                        tokens,
+                        ref indice,
+                        simbolos);
+
+                resultado =
+                    AplicarOperacionAritmetica(
+                        resultado,
+                        derecha,
+                        operador);
+            }
+
+            return resultado;
+        }
+
+        private object EvaluarFactorAritmetico(
+            List<Token> tokens,
+            ref int indice,
+            List<Simbolo> simbolos)
+        {
+            if (indice >= tokens.Count)
+                return null;
+
+            if (tokens[indice].Categoria == "CE7")
+            {
+                indice++;
+
+                object resultado =
+                    EvaluarSumaResta(
+                        tokens,
+                        ref indice,
+                        simbolos);
+
+                if (indice < tokens.Count &&
+                    tokens[indice].Categoria == "CE8")
+                {
+                    indice++;
+                }
+
+                return resultado;
+            }
+
+            Token token = tokens[indice];
+            indice++;
+
+            return ObtenerValorOperando(
+                token,
+                simbolos);
+        }
+
+        private object AplicarOperacionAritmetica(
+            object izquierda,
+            object derecha,
+            string operador)
+        {
+            if (izquierda == null ||
+                derecha == null)
+            {
+                return null;
+            }
+
+            if (operador == "OA1" &&
+                (izquierda is string || derecha is string))
+            {
+                return FormatearValorConcatenacion(izquierda) +
+                       FormatearValorConcatenacion(derecha);
+            }
+
+            bool ambosEnteros =
+                izquierda is int &&
+                derecha is int;
+
+            double a =
+                Convert.ToDouble(
+                    izquierda,
+                    CultureInfo.InvariantCulture);
+
+            double b =
+                Convert.ToDouble(
+                    derecha,
+                    CultureInfo.InvariantCulture);
+
+            switch (operador)
+            {
+                case "OA1":
+                    return ambosEnteros
+                        ? (object)((int)a + (int)b)
+                        : a + b;
+
+                case "OA2":
+                    return ambosEnteros
+                        ? (object)((int)a - (int)b)
+                        : a - b;
+
+                case "OA3":
+                    return ambosEnteros
+                        ? (object)((int)a * (int)b)
+                        : a * b;
+
+                case "OA4":
+                    if (b == 0)
+                        return null;
+
+                    return a / b;
+            }
+
+            return null;
+        }
+
+        private string FormatearValorConcatenacion(object valor)
+        {
+            if (valor == null)
+                return "";
+
+            if (valor is double)
+                return ((double)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (valor is float)
+                return ((float)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (valor is decimal)
+                return ((decimal)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            return valor.ToString();
+        }
+
+        private string ObtenerTipoValorSemantico(
+            object valor)
+        {
+            if (valor == null)
+                return "";
+
+            if (valor is bool)
+                return "Booleano";
+
+            if (valor is int)
+                return "Entero";
+
+            if (valor is double ||
+                valor is float ||
+                valor is decimal)
+                return "Real";
+
+            if (valor is string)
+                return "Cadena";
+
+            return "";
+        }
+
+        private string ValorParaTabla(object valor)
+        {
+            if (valor == null)
+                return "";
+
+            if (valor is bool)
+                return ((bool)valor)
+                    ? "true"
+                    : "false";
+
+            if (valor is double)
+                return ((double)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (valor is float)
+                return ((float)valor).ToString(
+                    CultureInfo.InvariantCulture);
+
+            return valor.ToString();
+        }
+
+        // ============================================================
+        // EJECUCIÓN LÉXICA
+        // ============================================================
 
         private void EjecutarLexico()
         {
@@ -246,303 +1815,879 @@ namespace AnalizadorLexico
             dgvErrores.Rows.Clear();
             dgvSimbolos.Rows.Clear();
             tablaSimbolos.Clear();
+            analisisAprobado = false;
+            btnGenerarIntermedio.Enabled = false;
+            rtCIntermedio.Clear();
             tokensLexico.Clear();
+            pilaScopes.Clear();
+            contadoresScopes.Clear();
 
-            // Limpiar y preparar dgvErrores: solo dos columnas (Linea, Error)
-            //dgvErrores.Columns.Clear();
-            //dgvErrores.Columns.Add("Linea", "Línea");
-            //dgvErrores.Columns.Add("Error", "Error");
-            //dgvErrores.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-            // Obtener líneas sin números
-            string[] lines = RemoveLineNumbers(rtbFuente.Text).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines =
+                RemoveLineNumbers(rtbFuente.Text)
+                .Split(
+                    new[] { '\r', '\n' },
+                    StringSplitOptions.RemoveEmptyEntries);
 
             for (int i = 0; i < lines.Length; i++)
             {
                 int numeroLinea = i + 1;
-                var lexemas = lexerDB.LeerCadena(lines[i]);
 
-                // escribir cabecera de línea en rtbTokens
-                rtbTokens.SelectionColor = rtbTokens.ForeColor;
-                rtbTokens.SelectionColor = Color.Blue;
-                rtbTokens.AppendText($"{numeroLinea}  ");
-                rtbTokens.SelectionColor = Color.Black;
+                var lexemas =
+                    lexerDB.LeerCadena(lines[i]);
+
+                var tokensLinea =
+                    new List<Token>();
+
                 foreach (var lex in lexemas)
                 {
-                    Token token;
+                    Token t;
+
                     try
                     {
-                        token = lexerDB.RecorrerMatriz(lex);
+                        bool esCadena =
+                            lex.Length >= 2 &&
+                            ((lex.StartsWith("'") &&
+                              lex.EndsWith("'")) ||
+                             (lex.StartsWith("\"") &&
+                              lex.EndsWith("\"")));
+
+                        bool esBooleano =
+                            lex.Equals(
+                                "verdadero",
+                                StringComparison.OrdinalIgnoreCase) ||
+                            lex.Equals(
+                                "falso",
+                                StringComparison.OrdinalIgnoreCase);
+
+                        t = esBooleano
+                            ? new Token
+                            {
+                                Lexema = lex,
+                                Categoria = "BOOLEANO",
+                                EsError = false
+                            }
+                            : esCadena
+                            ? new Token
+                            {
+                                Lexema = lex,
+                                Categoria = "CAD",
+                                EsError = false
+                            }
+                            : lexerDB.RecorrerMatriz(lex);
                     }
                     catch (Exception ex)
                     {
-                        token = new Token { Lexema = lex, Estado = -1, Categoria = "ERROR: Excepción durante análisis: " + ex.Message, EsError = true };
+                        t = new Token
+                        {
+                            Lexema = lex,
+                            Estado = -1,
+                            Categoria =
+                                "ERROR: Excepción durante análisis: "
+                                + ex.Message,
+                            EsError = true
+                        };
                     }
 
-                    // Almacenar el token con su número de línea
-                    token.Lexema = lex; // Asegurar que el lexema se guarde correctamente
-                    // Usamos una propiedad personalizada para guardar la línea
-                    // Como Token no tiene propiedad de línea, la guardaremos en una lista paralela
+                    t.Lexema = lex;
+                    tokensLinea.Add(t);
+                }
 
-                    if(token.EsError)
+                ActualizarScope(tokensLinea);
+
+                // Registrar símbolos declarados en el scope actual
+                for (int indiceToken = 0;
+                     indiceToken < tokensLinea.Count;
+                     indiceToken++)
+                {
+                    var token = tokensLinea[indiceToken];
+                    bool esDeclaracion =
+                        indiceToken > 0 &&
+                        (tokensLinea[indiceToken - 1].Categoria == "VAR" ||
+                         tokensLinea[indiceToken - 1].Categoria == "PR20");
+
+                    RegistrarSimbolo(token, esDeclaracion);
+                }
+
+                // ====================================================
+                // ASIGNACIONES
+                // ====================================================
+
+                for (int k = 0;
+                     k < tokensLinea.Count - 1;
+                     k++)
+                {
+                    if (!tokensLinea[k].EsError &&
+                        tokensLinea[k].Categoria == "IDENT" &&
+                        !tokensLinea[k + 1].EsError &&
+                        tokensLinea[k + 1].Categoria == "ASI")
                     {
-                        // Agregar a errores: solo Linea y Error (sin lexema en columna separada)
-                        dgvErrores.Rows.Add(numeroLinea, token.Categoria);
-                        int lastRow = dgvErrores.Rows.Count - 1;
-                        dgvErrores.Rows[lastRow].DefaultCellStyle.ForeColor = Color.Red;
+                        string nombreVar =
+                            tokensLinea[k].Lexema;
 
-                        // En rtbTokens mostrar "Error" en rojo seguido del lexema
-                        rtbTokens.SelectionStart = rtbTokens.TextLength;
-                        rtbTokens.SelectionColor = Color.Red;
-                        rtbTokens.AppendText($"Error ");
-                        rtbTokens.SelectionColor = Color.Red;
-                        rtbTokens.AppendText($"{token.Lexema} ");
+                        var tokensExpr =
+                            new List<Token>();
+
+                        int j = k + 2;
+
+                        while (j < tokensLinea.Count &&
+                               tokensLinea[j].Categoria != "DEL")
+                        {
+                            if (!tokensLinea[j].EsError)
+                                tokensExpr.Add(
+                                    tokensLinea[j]);
+
+                            j++;
+                        }
+
+                        var simboloDestino =
+                            BuscarSimboloVisible(
+                                nombreVar,
+                                tablaSimbolos);
+
+                        if (simboloDestino == null)
+                        {
+                            AgregarErrorSemantico(
+                                numeroLinea,
+                                "La variable '" + nombreVar +
+                                "' no está declarada en el scope actual",
+                                "Semántico - Error de alcance");
+                        }
+
+                        string tipoResultado =
+                            InferirTipoConPilaSemantica(
+                                tokensExpr,
+                                tablaSimbolos,
+                                numeroLinea);
+
+                        ValidarInicializacion(
+                            tokensExpr,
+                            numeroLinea);
+
+                        if (simboloDestino != null &&
+                            tipoResultado != "Error" &&
+                            tipoResultado != "Desconocido")
+                        {
+                            simboloDestino.Tipo =
+                                tipoResultado;
+                        }
+
+                        // ====================================================
+                        // AQUÍ ESTÁ LA CORRECCIÓN IMPORTANTE:
+                        // YA NO GUARDAMOS "pEdad > 18".
+                        // EVALUAMOS LA EXPRESIÓN.
+                        // ====================================================
+
+                        if (simboloDestino != null)
+                        {
+                            try
+                            {
+                                object valorEvaluado;
+
+                                if (EsExpresionBooleana(
+                                    tokensExpr))
+                                {
+                                    valorEvaluado =
+                                        EvaluarExpresionBooleana(
+                                            tokensExpr,
+                                            tablaSimbolos,
+                                            numeroLinea);
+
+                                    simboloDestino.Tipo =
+                                        "Booleano";
+                                }
+                                else
+                                {
+                                    valorEvaluado =
+                                        EvaluarExpresionAritmetica(
+                                            tokensExpr,
+                                            tablaSimbolos);
+                                }
+
+                                if (valorEvaluado != null)
+                                {
+                                    if (valorEvaluado is string &&
+                                        Encoding.UTF8.GetByteCount(
+                                            valorEvaluado.ToString()) > 255)
+                                    {
+                                        AgregarErrorSemantico(
+                                            numeroLinea,
+                                            "La cadena excede el límite de 255 bytes",
+                                            "Semántico - Desbordamiento");
+                                        k = j;
+                                        continue;
+                                    }
+
+                                    simboloDestino.Valor =
+                                        ValorParaTabla(
+                                            valorEvaluado);
+
+                                    string tipoEvaluado =
+                                        ObtenerTipoValorSemantico(
+                                            valorEvaluado);
+
+                                    if (!string.IsNullOrEmpty(
+                                        tipoEvaluado))
+                                    {
+                                        simboloDestino.Tipo =
+                                            tipoEvaluado;
+                                    }
+
+                                    ActualizarTamanoSimbolo(
+                                        simboloDestino);
+                                }
+                            }
+                            catch
+                            {
+                                // No detener el análisis
+                            }
+                        }
+
+                        k = j;
+                    }
+                }
+
+                // ====================================================
+                // LEER
+                // ====================================================
+
+                for (int k = 0;
+                     k < tokensLinea.Count - 1;
+                     k++)
+                {
+                    if (!tokensLinea[k].EsError &&
+                        tokensLinea[k].Categoria == "LEER" &&
+                        !tokensLinea[k + 1].EsError &&
+                        tokensLinea[k + 1].Categoria == "IDENT")
+                    {
+                        var simbolo =
+                            BuscarSimboloVisible(
+                                tokensLinea[k + 1].Lexema,
+                                tablaSimbolos);
+
+                        if (simbolo != null &&
+                            (string.IsNullOrEmpty(simbolo.Tipo) ||
+                             simbolo.Tipo == "Sin determinar"))
+                        {
+                            simbolo.Tipo = "Entero";
+                        }
+                   }
+                }
+
+                // ====================================================
+                // CONDICIONES DE SI
+                // ====================================================
+
+                for (int k = 0;
+                     k < tokensLinea.Count - 1;
+                     k++)
+                {
+                    if (!tokensLinea[k].EsError &&
+                        tokensLinea[k].Categoria == "SI" &&
+                        !tokensLinea[k + 1].EsError &&
+                        tokensLinea[k + 1].Categoria == "CE7")
+                    {
+                        var tokensCondicion =
+                            new List<Token>();
+
+                        int j = k + 2;
+                        int nivelParentesis = 1;
+
+                        while (j < tokensLinea.Count &&
+                               nivelParentesis > 0)
+                        {
+                            if (tokensLinea[j].Categoria == "CE7")
+                                nivelParentesis++;
+
+                            else if (tokensLinea[j].Categoria == "CE8")
+                                nivelParentesis--;
+
+                            if (nivelParentesis > 0 &&
+                                !tokensLinea[j].EsError)
+                            {
+                                tokensCondicion.Add(
+                                    tokensLinea[j]);
+                            }
+
+                            j++;
+                        }
+
+                        string tipoCondicion =
+                            InferirTipoConPilaSemantica(
+                                tokensCondicion,
+                                tablaSimbolos,
+                                numeroLinea);
+
+                        if (tipoCondicion != "Booleano" &&
+                            tipoCondicion != "Error")
+                        {
+                            string mensaje =
+                                $"La condición de SI debe ser Booleana, se obtuvo '{tipoCondicion}'";
+
+                            AgregarErrorSemantico(
+                                numeroLinea,
+                                mensaje,
+                                "Semántico - Condición no booleana");
+
+                            dgvErroresSintacticos.Rows[dgvErroresSintacticos.Rows.Count - 1]
+                                .DefaultCellStyle.ForeColor =
+                                Color.DarkOrange;
+                        }
+                    }
+                }
+
+                // ====================================================
+                // TOKENS
+                // ====================================================
+
+                rtbTokens.SelectionColor = Color.Blue;
+                rtbTokens.AppendText(
+                    $"{numeroLinea}  ");
+                rtbTokens.SelectionColor = Color.Black;
+
+                foreach (var token in tokensLinea)
+                {
+                    if (token.EsError)
+                    {
+                        string tipoError =
+                            ClasificarTipoError(
+                                token.Categoria);
+
+                        dgvErrores.Rows.Add(
+                            numeroLinea,
+                            token.Categoria,
+                            tipoError);
+
+                        dgvErrores.Rows[
+                            dgvErrores.Rows.Count - 1]
+                            .DefaultCellStyle.ForeColor =
+                            Color.Red;
+
+                        rtbTokens.SelectionStart =
+                            rtbTokens.TextLength;
+
+                        rtbTokens.SelectionColor =
+                            Color.Red;
+
+                        rtbTokens.AppendText(
+                            $"Error {token.Lexema} ");
                     }
                     else
                     {
-                        // Guardar token válido para el análisis sintáctico
                         tokensLexico.Add(token);
 
-                        // 1. Aseguramos que el símbolo esté en la tabla y obtenemos su referencia
-                        lexerDB.ActualizarTablaSimbolos(token, tablaSimbolos);
+                        var simboloActual =
+                            tablaSimbolos.FirstOrDefault(
+                                s => s.Nombre.Equals(
+                                    token.Lexema,
+                                    StringComparison.OrdinalIgnoreCase));
 
-                        // 2. Buscamos el símbolo en la lista para obtener el NumID asignado
-                        var simboloActual = tablaSimbolos.FirstOrDefault(s => s.Nombre == token.Lexema);
-                        string etiquetaMostrar = token.Categoria;
+                        string etiquetaMostrar =
+                            token.Categoria;
 
-                        if (token.Categoria == "IDENT" && simboloActual != null)
+                        if (token.Categoria == "IDENT" &&
+                            simboloActual != null)
                         {
-                            // Concatenamos el número del identificador
-                            etiquetaMostrar = $"IDENT{simboloActual.NumID}";
-                            rtbTokens.SelectionColor = Color.Orange; // Identificadores en azul
+                            etiquetaMostrar =
+                                $"IDENT{simboloActual.NumID}";
+
+                            rtbTokens.SelectionColor =
+                                Color.Orange;
                         }
                         else
                         {
-                            rtbTokens.SelectionColor = Color.Black;
-
+                            rtbTokens.SelectionColor =
+                                Color.Black;
                         }
 
-                        // 3. Imprimimos en el RichTextBox
-                        rtbTokens.SelectionStart = rtbTokens.TextLength;
+                        rtbTokens.SelectionStart =
+                            rtbTokens.TextLength;
 
-                        rtbTokens.AppendText($" {etiquetaMostrar} ");
-                        rtbTokens.SelectionColor = rtbTokens.ForeColor;
+                        rtbTokens.AppendText(
+                            $" {etiquetaMostrar} ");
+
+                        rtbTokens.SelectionColor =
+                            rtbTokens.ForeColor;
                     }
                 }
 
                 rtbTokens.AppendText("\n");
             }
 
-            // Llenar dgvSimbolos
+            // ====================================================
+            // TABLA DE SÍMBOLOS
+            // ====================================================
+
             foreach (var s in tablaSimbolos)
             {
-                int idx = dgvSimbolos.Rows.Add();
-                dgvSimbolos.Rows[idx].Cells[0].Value = s.NumID;
-                dgvSimbolos.Rows[idx].Cells[1].Value = s.Nombre;
-                // marcar en rojo
-                dgvSimbolos.Rows[idx].DefaultCellStyle.ForeColor = Color.Red;
+                int idx =
+                    dgvSimbolos.Rows.Add();
+
+                dgvSimbolos.Rows[idx].Cells[0].Value =
+                    s.NumID;
+
+                dgvSimbolos.Rows[idx].Cells[1].Value =
+                    s.Nombre;
+
+                dgvSimbolos.Rows[idx].Cells[2].Value =
+                    string.IsNullOrEmpty(s.Tipo)
+                        ? "Sin determinar"
+                        : s.Tipo;
+
+                if (dgvSimbolos.Columns.Count > 3)
+                {
+                    dgvSimbolos.Rows[idx].Cells[3].Value =
+                        s.Valor ?? string.Empty;
+                }
+
+                if (dgvSimbolos.Columns.Count > 4)
+                {
+                    dgvSimbolos.Rows[idx].Cells[4].Value =
+                        string.IsNullOrEmpty(s.Scope)
+                            ? "Global"
+                            : s.Scope;
+                }
+
+                if (dgvSimbolos.Columns.Count > 5)
+                {
+                    dgvSimbolos.Rows[idx].Cells[5].Value =
+                        s.TamanoBytes;
+                }
+
+                dgvSimbolos.Rows[idx]
+                    .DefaultCellStyle.ForeColor =
+                    Color.Red;
             }
 
-            // bloquear rtbFuente
             rtbFuente.ReadOnly = true;
+        }
+
+        // ============================================================
+        // ============================================================
+        // RESTO DEL FORM
+        // ============================================================
+
+        private string ClasificarTipoError(
+            string categoriaError)
+        {
+            if (categoriaError.Contains(
+                "no reconocido"))
+                return "Léxico - Carácter no válido";
+
+            if (categoriaError.Contains(
+                "Transición inválida"))
+                return "Léxico - Transición inválida";
+
+            if (categoriaError.Contains("Fase"))
+                return "Léxico - Estado inválido";
+
+            if (categoriaError.Contains(
+                "Identificador"))
+                return "Léxico - Identificador inválido";
+
+            if (categoriaError.Contains(
+                "numérica"))
+                return "Léxico - Constante numérica inválida";
+
+            if (categoriaError.Contains(
+                "Excepción"))
+                return "Léxico - Error interno";
+
+            return "Léxico - Error no clasificado";
         }
 
         private string AddLineNumbers(string text)
         {
-            var lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            var lines =
+                text.Split(
+                    new[] { "\r\n", "\r", "\n" },
+                    StringSplitOptions.None);
+
             var sb = new StringBuilder();
+
             for (int i = 0; i < lines.Length; i++)
             {
-                // agregar numeración seguida de un tabulador
                 if (i < lines.Length - 1)
-                    sb.AppendLine(/*(i + 1) + "\t" + */ lines[i]);
+                    sb.AppendLine(lines[i]);
                 else
-                    sb.Append(/*(i + 1) + "\t" + */ lines[i]); // última línea sin salto adicional
+                    sb.Append(lines[i]);
             }
+
             return sb.ToString();
         }
 
         private string RemoveLineNumbers(string text)
         {
-            // eliminar numeración del inicio de cada línea: "numero<tab>"
-            var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.None);
+            var lines =
+                text.Split(
+                    new[] { '\r', '\n' },
+                    StringSplitOptions.None);
+
             var sb = new StringBuilder();
-            var regex = new Regex("^\\s*\\d+\\t?");
+
+            var regex =
+                new Regex("^\\s*\\d+\\t?");
+
             for (int i = 0; i < lines.Length; i++)
             {
-                string clean = regex.Replace(lines[i], "");
+                string clean =
+                    regex.Replace(lines[i], "");
+
                 sb.AppendLine(clean);
             }
+
             return sb.ToString();
         }
 
-        private void RtbFuente_KeyDown(object sender, KeyEventArgs e)
+        private void RtbFuente_KeyDown(
+            object sender,
+            KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Tab)
             {
-                e.SuppressKeyPress = true; // Evita que Tab mueva el foco
-                rtbFuente.SelectedText = "     "; // Insertar 5 espacios
+                e.SuppressKeyPress = true;
+                rtbFuente.SelectedText = "     ";
             }
         }
 
-        private void lblTitulo_Click(object sender, EventArgs e)
+        private void Form1_Load(
+            object sender,
+            EventArgs e)
         {
+            string msg;
 
-        }
+            bool ok =
+                lexerDB.TestConnection(
+                    out msg);
 
-        private void lblTitulo_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label13_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label4_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnInfo_Click(object sender, EventArgs e)
-        {
-            FormInfo infoForm = new FormInfo();
-            infoForm.Show();
-        }
-
-
-        public void UpdateLineNumbers()
-        {
-            // Obtener la posición actual
-            Point pt = new Point(0, 0);
-            int firstIndex = rtbFuente.GetCharIndexFromPosition(pt);
-            int firstLine = rtbFuente.GetLineFromCharIndex(firstIndex);
-
-            // Definir el punto final visible
-            pt.X = rtbFuente.ClientRectangle.Width;
-            pt.Y = rtbFuente.ClientRectangle.Height;
-            int lastIndex = rtbFuente.GetCharIndexFromPosition(pt);
-            int lastLine = rtbFuente.GetLineFromCharIndex(lastIndex);
-
-            txtNumerosLinea.SelectionAlignment = HorizontalAlignment.Center;
-            txtNumerosLinea.Text = "";
-
-            // Llenar el margen con los números correspondientes
-            for (int i = firstLine; i <= lastLine + 1; i++)
+            if (ok)
             {
-                txtNumerosLinea.Text += (i + 1) + "\n";
+                MessageBox.Show(
+                    "Conexión exitosa a la base de datos.",
+                    "Prueba BD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show(
+                    "Error de conexión a la base de datos:\n"
+                    + msg,
+                    "Prueba BD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
-        // Eventos para actualizar al escribir o cambiar tamaño
-        private void rtbFuente_VScroll(object sender, EventArgs e) => UpdateLineNumbers();
-
-        private void rtbFuente_TextChanged_1(object sender, EventArgs e)
+        private void btnCargar_Click(
+            object sender,
+            EventArgs e)
         {
-            UpdateLineNumbers();
-        }
-
-        private void rtbFuente_VScroll_1(object sender, EventArgs e)
-        {
-            int line = rtbFuente.GetLineFromCharIndex(rtbFuente.GetCharIndexFromPosition(new Point(0, 0)));
-            UpdateLineNumbers();
-        }
-
-        private void btnGuardar_Click_1(object sender, EventArgs e)
-        {
-            using (SaveFileDialog sfd = new SaveFileDialog())
+            using (OpenFileDialog ofd =
+                   new OpenFileDialog())
             {
-                sfd.Filter = "Text Files|*.txt";
-                if (sfd.ShowDialog() == DialogResult.OK)
+                ofd.Filter =
+                    "Text Files|*.txt";
+
+                if (ofd.ShowDialog() ==
+                    DialogResult.OK)
                 {
-                    File.WriteAllText(sfd.FileName, rtbFuente.Text, Encoding.UTF8);
+                    string content =
+                        File.ReadAllText(
+                            ofd.FileName,
+                            Encoding.UTF8);
+
+                    rtbFuente.Text =
+                        AddLineNumbers(content);
+
+                    rtbFuente.ReadOnly = true;
+
+                    rtbTokens.Clear();
+                    dgvErrores.Rows.Clear();
+                    dgvSimbolos.Rows.Clear();
+                    tablaSimbolos.Clear();
+                    analisisAprobado = false;
+                    btnGenerarIntermedio.Enabled = false;
+                    rtCIntermedio.Clear();
                 }
             }
-
         }
 
-        private void label4_MouseEnter(object sender, EventArgs e)
+        private void btnEditar_Click(
+            object sender,
+            EventArgs e)
         {
-            //label4.ForeColor = Color.FromArgb(187, 222, 251);
-            label4.Cursor = Cursors.Hand;
+            rtbFuente.ReadOnly = false;
 
-            label4.BackColor = Color.FromArgb(187, 222, 251);
+            rtbTokens.Clear();
+            dgvErrores.Rows.Clear();
+            dgvSimbolos.Rows.Clear();
+            tablaSimbolos.Clear();
+
+            dgvErroresSintacticos.Rows.Clear();
+            rtSintaxis.Clear();
+            analisisAprobado = false;
+            btnGenerarIntermedio.Enabled = false;
+            rtCIntermedio.Clear();
         }
 
-        private void label4_MouseLeave(object sender, EventArgs e)
+        private void btnGuardar_Click(
+            object sender,
+            EventArgs e)
         {
-            //label4.ForeColor = Color.White;
-            label4.BackColor = Color.FromArgb(25, 70, 130);
+            using (SaveFileDialog sfd =
+                   new SaveFileDialog())
+            {
+                sfd.Filter =
+                    "Text Files|*.txt";
+
+                if (sfd.ShowDialog() ==
+                    DialogResult.OK)
+                {
+                    string text =
+                        RemoveLineNumbers(
+                            rtbFuente.Text);
+
+                    File.WriteAllText(
+                        sfd.FileName,
+                        text,
+                        Encoding.UTF8);
+                }
+            }
         }
 
-        // Click en label5 (ejecuta Sintáctico)
-        private void label5_Click(object sender, EventArgs e)
+        private void btnGuardarA_Click(
+            object sender,
+            EventArgs e)
+        {
+            using (SaveFileDialog sfd =
+                   new SaveFileDialog())
+            {
+                sfd.Filter =
+                    "Text Files|*.txt";
+
+                sfd.FileName = "tokens.txt";
+
+                if (sfd.ShowDialog() ==
+                    DialogResult.OK)
+                {
+                    File.WriteAllText(
+                        sfd.FileName,
+                        rtbTokens.Text,
+                        Encoding.UTF8);
+                }
+            }
+        }
+
+        private void label4_Click(
+            object sender,
+            EventArgs e)
         {
             if (!lexerDB.IsMatrizLoaded())
             {
-                MessageBox.Show("La matriz de transición no está disponible. Verifica la conexión a la base de datos.", "Error BD", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    "La matriz de transición no está disponible. Verifica la conexión a la base de datos.",
+                    "Error BD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
                 return;
             }
 
-            EjecutarSintactico();
+            dgvErroresSintacticos.Rows.Clear();
+            rtSintaxis.Clear();
+
+            EjecutarLexico();
+
+            if (dgvErrores.Rows.Count > 0)
+            {
+                btnGuardarA.Enabled = false;
+
+                dgvErroresSintacticos.Rows.Clear();
+                rtSintaxis.Clear();
+
+                MessageBox.Show(
+                    "Se encontraron errores léxicos. No se puede ejecutar el análisis sintáctico.",
+                    "Errores Léxicos",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                analisisAprobado = false;
+                btnGenerarIntermedio.Enabled = false;
+            }
+            else
+            {
+                btnGuardarA.Enabled = true;
+
+                EjecutarSintactico();
+
+                bool hayErroresSintacticos =
+                    ContieneErroresSintacticos();
+                bool hayErroresSemanticos =
+                    ContieneErroresDeCategoria("Semántico -");
+                bool hayErroresAnalisis =
+                    hayErroresSintacticos || hayErroresSemanticos;
+
+                analisisAprobado = !hayErroresAnalisis;
+                btnGenerarIntermedio.Enabled = analisisAprobado;
+                btnCodigoIntermedio.Enabled = analisisAprobado;
+                btnVerIntermedio.Enabled = analisisAprobado && !string.IsNullOrWhiteSpace(rtCIntermedio.Text);
+
+                if (hayErroresAnalisis)
+                {
+                    string mensaje;
+                    string titulo;
+
+                    if (hayErroresSintacticos && hayErroresSemanticos)
+                    {
+                        mensaje =
+                            "Se encontraron errores sintácticos y semánticos.";
+                        titulo = "Errores de análisis";
+                    }
+                    else if (hayErroresSemanticos)
+                    {
+                        mensaje =
+                            "Se encontraron errores semánticos.";
+                        titulo = "Errores Semánticos";
+                    }
+                    else
+                    {
+                        mensaje =
+                            "Se encontraron errores en la sintaxis.";
+                        titulo = "Errores Sintácticos";
+                    }
+
+                    MessageBox.Show(
+                        mensaje,
+                        titulo,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "No se encontraron errores.",
+                        "Análisis completo",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
         }
 
         private bool EjecutarSintactico()
         {
-            // Primero ejecutar el léxico si no se ha hecho
-            if (string.IsNullOrEmpty(rtbTokens.Text) || rtbTokens.Text.Trim() == "")
+            if (string.IsNullOrEmpty(
+                    rtbTokens.Text) ||
+                rtbTokens.Text.Trim() == "")
             {
                 EjecutarLexico();
             }
 
-            // Convertir tokens del lexer a TokenSintactico usando los tokens almacenados
-            List<ParserSintactico.TokenSintactico> tokensSintacticos = new List<ParserSintactico.TokenSintactico>();
+            List<ParserSintactico.TokenSintactico>
+                tokensSintacticos =
+                new List<ParserSintactico.TokenSintactico>();
 
-            // Obtener líneas sin números para calcular números de línea
-            string[] lines = RemoveLineNumbers(rtbFuente.Text).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines =
+                RemoveLineNumbers(
+                    rtbFuente.Text)
+                .Split(
+                    new[] { '\r', '\n' },
+                    StringSplitOptions.RemoveEmptyEntries);
 
             int tokenIndex = 0;
-            for (int lineaActual = 0; lineaActual < lines.Length; lineaActual++)
+
+            for (int lineaActual = 0;
+                 lineaActual < lines.Length;
+                 lineaActual++)
             {
-                var lexemas = lexerDB.LeerCadena(lines[lineaActual]);
-                int numeroLinea = lineaActual + 1;
+                var lexemas =
+                    lexerDB.LeerCadena(
+                        lines[lineaActual]);
+
+                int numeroLinea =
+                    lineaActual + 1;
 
                 foreach (var lex in lexemas)
                 {
-                    if (tokenIndex < tokensLexico.Count)
+                    if (tokenIndex <
+                        tokensLexico.Count)
                     {
-                        Token token = tokensLexico[tokenIndex];
+                        Token token =
+                            tokensLexico[tokenIndex];
+
                         if (!token.EsError)
                         {
-                            // Determinar el tipo de token sintáctico
-                            string tipo = DeterminarTipoTokenDesdeCategoria(token.Categoria);
-                            tokensSintacticos.Add(new ParserSintactico.TokenSintactico
-                            {
-                                Tipo = tipo,
-                                Valor = token.Lexema,
-                                Linea = numeroLinea
-                            });
+                            string tipo =
+                                DeterminarTipoTokenDesdeCategoria(
+                                    token.Categoria);
+
+                            tokensSintacticos.Add(
+                                new ParserSintactico.TokenSintactico
+                                {
+                                    Tipo = tipo,
+                                    Valor = token.Lexema,
+                                    Linea = numeroLinea
+                                });
                         }
+
                         tokenIndex++;
                     }
                 }
             }
 
-            // Crear parser y ejecutar
-            ParserSintactico parser = new ParserSintactico(tokensSintacticos, dgvErroresSintacticos, rtSintaxis);
+            ParserSintactico parser =
+                new ParserSintactico(
+                    tokensSintacticos,
+                    dgvErroresSintacticos,
+                    rtSintaxis);
+
             parser.Parse();
 
-            // Devolver true si hay errores sintácticos, false si no
             return dgvErroresSintacticos.Rows.Count > 0;
         }
 
-        private string DeterminarTipoTokenDesdeCategoria(string categoria)
+        private bool ContieneErroresDeCategoria(string categoria)
         {
-            // Mapeo de categorías del lexer a tipos sintácticos
+            foreach (DataGridViewRow fila in dgvErroresSintacticos.Rows)
+            {
+                string error = Convert.ToString(
+                    fila.Cells[1].Value);
+
+                if (error.StartsWith(
+                    categoria,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ContieneErroresSintacticos()
+        {
+            foreach (DataGridViewRow fila in dgvErroresSintacticos.Rows)
+            {
+                string error = Convert.ToString(
+                    fila.Cells[1].Value);
+
+                if (!error.StartsWith(
+                    "Semántico -",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string DeterminarTipoTokenDesdeCategoria(
+            string categoria)
+        {
             switch (categoria)
             {
                 case "IDENT": return "IDENT";
+                case "BOOLEANO": return "BOL";
+
                 case "INICIO": return "PR1";
                 case "FIN": return "PR2";
                 case "LEER": return "PR3";
@@ -564,50 +2709,66 @@ namespace AnalizadorLexico
                 case "RETORNAR": return "PR19";
                 case "VAR": return "PR20";
                 case "NUEVO": return "PR21";
+
                 case "ASI": return "ASI";
+
                 case "OA1": return "OA1";
                 case "OA2": return "OA2";
                 case "OA3": return "OA3";
                 case "OA4": return "OA4";
+
                 case "OR1": return "OR1";
                 case "OR2": return "OR2";
                 case "OR3": return "OR3";
                 case "OR4": return "OR4";
                 case "OR5": return "OR5";
                 case "OR6": return "OR6";
-                case "Y": return "OPL1"; // operador lógico AND
-                case "O": return "OPL2"; // operador lógico OR
-                case "NO": return "OPL3"; // operador lógico NOT
-                case "DEL": return "CE13"; // ;
-                case "CE16": return "CE16"; // ,
-                case "CE7": return "CE7"; // (
-                case "CE8": return "CE8"; // )
-                case "CE9": return "CE9"; // {
-                case "CE10": return "CE10"; // }
-                case "CE11": return "CE11"; // :
-                case "CE12": return "CE12"; // "
-                case "CE14": return "CE14"; // ?
-                case "CE15": return "CE15"; // \
-                case "CE17": return "CE17"; // .
-                case "CE18": return "CE18"; // ~
-                case "CE19": return "CE19"; // [
-                case "CE20": return "CE20"; // ]
-                case "CE21": return "CE21"; // _
-                case "CE22": return "CE22"; // ¿
-                case "CE23": return "CE23"; // !
-                case "CN ENTEROS": return "CNU";
-                case "CN REALES": return "CNU";
-                case "CN CON EXPONENTE": return "CNU";
-                case "CAD": return "CAD";
-                case "COM": return "COMEN";
-                default: return categoria;
+
+                case "Y": return "OPL1";
+                case "O": return "OPL2";
+                case "NO": return "OPL3";
+
+                case "DEL": return "CE13";
+
+                case "CE7": return "CE7";
+                case "CE8": return "CE8";
+                case "CE9": return "CE9";
+                case "CE10": return "CE10";
+                case "CE11": return "CE11";
+                case "CE12": return "CE12";
+                case "CE14": return "CE14";
+                case "CE15": return "CE15";
+                case "CE16": return "CE16";
+                case "CE17": return "CE17";
+                case "CE18": return "CE18";
+                case "CE19": return "CE19";
+                case "CE20": return "CE20";
+                case "CE21": return "CE21";
+                case "CE22": return "CE22";
+                case "CE23": return "CE23";
+
+                case "CN ENTEROS":
+                case "CN REALES":
+                case "CN CON EXPONENTE":
+                    return "CNU";
+
+                case "CAD":
+                    return "CAD";
+
+                case "COM":
+                    return "COMEN";
+
+                default:
+                    return categoria;
             }
         }
 
-        private string DeterminarTipoToken(string tokenStr)
+        private string DeterminarTipoToken(
+            string tokenStr)
         {
-            // Mapeo de tokens léxicos a tipos sintácticos
-            if (tokenStr.StartsWith("IDENT")) return "IDENT";
+            if (tokenStr.StartsWith("IDENT"))
+                return "IDENT";
+
             if (tokenStr == "INICIO") return "PR1";
             if (tokenStr == "FIN") return "PR2";
             if (tokenStr == "LEER") return "PR3";
@@ -629,59 +2790,185 @@ namespace AnalizadorLexico
             if (tokenStr == "RETORNAR") return "PR19";
             if (tokenStr == "VAR") return "PR20";
             if (tokenStr == "NUEVO") return "PR21";
+
             if (tokenStr == "ASI") return "ASI";
+
             if (tokenStr == "OA1") return "OA1";
             if (tokenStr == "OA2") return "OA2";
             if (tokenStr == "OA3") return "OA3";
             if (tokenStr == "OA4") return "OA4";
+
             if (tokenStr == "OR1") return "OR1";
             if (tokenStr == "OR2") return "OR2";
             if (tokenStr == "OR3") return "OR3";
             if (tokenStr == "OR4") return "OR4";
             if (tokenStr == "OR5") return "OR5";
             if (tokenStr == "OR6") return "OR6";
-            if (tokenStr == "CE7") return "CE7"; // (
-            if (tokenStr == "CE8") return "CE8"; // )
-            if (tokenStr == "CE9") return "CE9"; // {
-            if (tokenStr == "CE10") return "CE10"; // }
-            if (tokenStr == "CE13") return "CE13"; // ;
-            if (tokenStr == "CE16") return "CE16"; // ,
-            if (tokenStr.StartsWith("CN")) return "CNU";
-            if (tokenStr == "CAD") return "CAD";
 
-            // Por defecto, usar el mismo string como tipo
+            if (tokenStr == "CE7") return "CE7";
+            if (tokenStr == "CE8") return "CE8";
+            if (tokenStr == "CE9") return "CE9";
+            if (tokenStr == "CE10") return "CE10";
+            if (tokenStr == "CE13") return "CE13";
+            if (tokenStr == "CE16") return "CE16";
+
+            if (tokenStr.StartsWith("CN"))
+                return "CNU";
+
+            if (tokenStr == "CAD")
+                return "CAD";
+
             return tokenStr;
         }
 
-        private void label5_MouseEnter(object sender, EventArgs e)
+        // ============================================================
+        // EVENTOS
+        // ============================================================
+
+        private void btnGuardar_Click_1(
+            object sender,
+            EventArgs e)
         {
-            label5.Cursor = Cursors.Hand;
-            label5.BackColor = Color.FromArgb(187, 222, 251);
+            using (SaveFileDialog sfd =
+                   new SaveFileDialog())
+            {
+                sfd.Filter =
+                    "Text Files|*.txt";
+
+                if (sfd.ShowDialog() ==
+                    DialogResult.OK)
+                {
+                    File.WriteAllText(
+                        sfd.FileName,
+                        rtbFuente.Text,
+                        Encoding.UTF8);
+                }
+            }
         }
 
-        private void label5_MouseLeave(object sender, EventArgs e)
+        private void label4_MouseEnter(
+            object sender,
+            EventArgs e)
         {
-            label5.BackColor = Color.FromArgb(25, 70, 130);
+            label4.Cursor =
+                Cursors.Hand;
+
+            label4.BackColor =
+                Color.FromArgb(
+                    187,
+                    222,
+                    251);
         }
 
-        private void dgvErrores_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void label4_MouseLeave(
+            object sender,
+            EventArgs e)
         {
-
+            label4.BackColor =
+                Color.FromArgb(
+                    25,
+                    70,
+                    130);
         }
 
-        private void dgvSimbolos_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void btnInfo_Click(
+            object sender,
+            EventArgs e)
         {
+            FormInfo infoForm =
+                new FormInfo();
 
+            infoForm.Show();
         }
 
-        private void dgvErroresSintacticos_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        public void UpdateLineNumbers()
         {
+            Point pt =
+                new Point(0, 0);
 
+            int firstIndex =
+                rtbFuente.GetCharIndexFromPosition(
+                    pt);
+
+            int firstLine =
+                rtbFuente.GetLineFromCharIndex(
+                    firstIndex);
+
+            pt.X =
+                rtbFuente.ClientRectangle.Width;
+
+            pt.Y =
+                rtbFuente.ClientRectangle.Height;
+
+            int lastIndex =
+                rtbFuente.GetCharIndexFromPosition(
+                    pt);
+
+            int lastLine =
+                rtbFuente.GetLineFromCharIndex(
+                    lastIndex);
+
+            txtNumerosLinea.SelectionAlignment =
+                HorizontalAlignment.Center;
+
+            txtNumerosLinea.Text = "";
+
+            for (int i = firstLine;
+                 i <= lastLine + 1;
+                 i++)
+            {
+                txtNumerosLinea.Text +=
+                    (i + 1) + "\n";
+            }
         }
 
-        private void rtSintaxis_TextChanged(object sender, EventArgs e)
+        private void rtbFuente_VScroll(object sender,EventArgs e)
         {
-
+            UpdateLineNumbers();
         }
+
+        private void rtbFuente_TextChanged_1(object sender,EventArgs e)
+        {
+            UpdateLineNumbers();
+        }
+
+        private void rtbFuente_VScroll_1(object sender,EventArgs e)
+        {
+            UpdateLineNumbers();
+        }
+
+        private void lblTitulo_Click(object sender,EventArgs e)
+        {
+        }
+
+        private void lblTitulo_Click_1(object sender,EventArgs e)
+        {
+        }
+
+        private void label13_Click(object sender,EventArgs e)
+        {
+        }
+
+        private void label4_Click_1(object sender,EventArgs e)
+        {
+            label4_Click(sender, e);
+        }
+
+        private void dgvErrores_CellContentClick(object sender,DataGridViewCellEventArgs e)
+        {
+        }
+
+        private void dgvSimbolos_CellContentClick(object sender,DataGridViewCellEventArgs e)
+        {
+        }
+
+        private void dgvErroresSintacticos_CellContentClick(object sender,DataGridViewCellEventArgs e)
+        {
+        }
+
+        private void rtSintaxis_TextChanged(object sender,EventArgs e)
+        {
+        }
+
     }
-}
+} 
