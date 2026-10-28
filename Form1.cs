@@ -22,6 +22,7 @@ namespace AnalizadorLexico
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private bool analisisAprobado;
         private readonly GeneradorCodigoP generadorCodigoP = new GeneradorCodigoP();
+        private CodigoIntermedio codigoIntermedioForm;
 
         private string ScopeActual
         {
@@ -49,6 +50,71 @@ namespace AnalizadorLexico
 
             string codigo = generadorCodigoP.Generar(tokensLexico);
             rtCIntermedio.Text = codigo;
+
+            MessageBox.Show(
+                "El código se genero exitosamente y quedará disponible en la vista de código intermedio.",
+                "Código intermedio",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void btnCodigoIntermedio_Click(object sender, EventArgs e)
+        {
+            if (!analisisAprobado)
+            {
+                MessageBox.Show(
+                    "Primero debes completar correctamente el análisis léxico, sintáctico y semántico.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            string codigo = generadorCodigoP.Generar(tokensLexico);
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                MessageBox.Show(
+                    "No se pudo generar el código intermedio del programa actual.",
+                    "Código intermedio",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            rtCIntermedio.Text = codigo;
+
+            if (codigoIntermedioForm == null || codigoIntermedioForm.IsDisposed)
+            {
+                codigoIntermedioForm = new CodigoIntermedio();
+            }
+
+            codigoIntermedioForm.CargarCodigo(codigo, rtbFuente.Text);
+            codigoIntermedioForm.Show();
+            codigoIntermedioForm.BringToFront();
+
+            btnVerIntermedio.Enabled = true;
+
+            MessageBox.Show(
+                "El código se genero exitosamente.",
+                "Código intermedio",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void btnVerIntermedio_Click(object sender, EventArgs e)
+        {
+            if (codigoIntermedioForm == null || codigoIntermedioForm.IsDisposed)
+            {
+                codigoIntermedioForm = new CodigoIntermedio();
+            }
+
+            if (!string.IsNullOrWhiteSpace(rtCIntermedio.Text))
+            {
+                codigoIntermedioForm.CargarCodigo(rtCIntermedio.Text, rtbFuente.Text);
+            }
+
+            codigoIntermedioForm.Show();
+            codigoIntermedioForm.BringToFront();
         }
 
         public Form1()
@@ -62,6 +128,8 @@ namespace AnalizadorLexico
 
             rtbFuente.ReadOnly = false;
             btnGenerarIntermedio.Enabled = false;
+            btnCodigoIntermedio.Enabled = false;
+            btnVerIntermedio.Enabled = false;
 
             if (!lexerDB.IsMatrizLoaded())
             {
@@ -2460,6 +2528,8 @@ namespace AnalizadorLexico
 
                 analisisAprobado = !hayErroresAnalisis;
                 btnGenerarIntermedio.Enabled = analisisAprobado;
+                btnCodigoIntermedio.Enabled = analisisAprobado;
+                btnVerIntermedio.Enabled = analisisAprobado && !string.IsNullOrWhiteSpace(rtCIntermedio.Text);
 
                 if (hayErroresAnalisis)
                 {
@@ -2901,4 +2971,4 @@ namespace AnalizadorLexico
         }
 
     }
-}
+} 

@@ -119,10 +119,14 @@ namespace AnalizadorLexico
 
         private int EmitirSi(IList<Token> tokens, int inicio, int fin)
         {
-            int condicionInicio = SiguienteIndice(tokens, inicio + 1, "CE7");
-            if (condicionInicio < 0)
+            int indice = inicio + 1;
+            while (indice < fin && !EsCategoria(tokens[indice], "CE7"))
+                indice++;
+
+            if (indice >= fin)
                 return inicio + 1;
 
+            int condicionInicio = indice;
             int condicionFin = EncontrarCierreParentesis(tokens, condicionInicio, fin);
             if (condicionFin < 0)
                 return inicio + 1;
@@ -130,31 +134,24 @@ namespace AnalizadorLexico
             List<Token> condicion = Sublista(tokens, condicionInicio + 1, condicionFin);
             EmitirExpresion(condicion);
 
-            int entonces = SiguienteIndice(tokens, condicionFin + 1, "PR6");
-            if (entonces < 0)
+            int entonces = condicionFin + 1;
+            while (entonces < fin && !EsCategoria(tokens[entonces], "ENTONCES", "PR6"))
+                entonces++;
+
+            if (entonces >= fin)
                 return condicionFin + 1;
 
-            int finBloque = EncontrarFinBloque(tokens, entonces + 1, fin);
-            int sino = EncontrarSino(tokens, entonces + 1, finBloque);
+            int cuerpoInicio = entonces + 1;
+            int finBloque = EncontrarFinBloque(tokens, cuerpoInicio, fin);
+            if (finBloque < 0)
+                return inicio + 1;
+
             string etiquetaFalso = NuevaEtiqueta();
-            string etiquetaFin = sino >= 0 ? NuevaEtiqueta() : null;
-
             instrucciones.Add("fjp " + etiquetaFalso);
-            EmitirBloque(tokens, entonces + 1, sino >= 0 ? sino : finBloque);
+            EmitirBloque(tokens, cuerpoInicio, finBloque);
+            instrucciones.Add("lab " + etiquetaFalso);
 
-            if (sino >= 0)
-            {
-                instrucciones.Add("ujp " + etiquetaFin);
-                instrucciones.Add(etiquetaFalso + ":");
-                EmitirBloque(tokens, sino + 1, finBloque);
-                instrucciones.Add(etiquetaFin + ":");
-            }
-            else
-            {
-                instrucciones.Add(etiquetaFalso + ":");
-            }
-
-            return finBloque < fin ? finBloque + 1 : finBloque;
+            return finBloque + 1;
         }
 
         private int EmitirRepetir(IList<Token> tokens, int inicio, int fin)
@@ -165,7 +162,7 @@ namespace AnalizadorLexico
 
             int hasta = EncontrarCategoria(tokens, inicio + 1, finBloque, "PR9");
             string etiquetaInicio = NuevaEtiqueta();
-            instrucciones.Add(etiquetaInicio + ":");
+            instrucciones.Add("lab " + etiquetaInicio);
 
             if (hasta >= 0)
             {
@@ -194,12 +191,12 @@ namespace AnalizadorLexico
             string etiquetaInicio = NuevaEtiqueta();
             string etiquetaFin = NuevaEtiqueta();
 
-            instrucciones.Add(etiquetaInicio + ":");
+            instrucciones.Add("lab " + etiquetaInicio);
             EmitirExpresion(condicion);
             instrucciones.Add("fjp " + etiquetaFin);
             EmitirBloque(tokens, hacer + 1, finBloque);
             instrucciones.Add("ujp " + etiquetaInicio);
-            instrucciones.Add(etiquetaFin + ":");
+            instrucciones.Add("lab " + etiquetaFin);
             return finBloque + 1;
         }
 

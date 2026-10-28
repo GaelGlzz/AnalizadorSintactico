@@ -49,7 +49,6 @@ namespace AnalizadorLexico
             this.lblTitulo = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.btnInfo = new System.Windows.Forms.Button();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.label5 = new System.Windows.Forms.Label();
             this.dgvErroresSintacticos = new System.Windows.Forms.DataGridView();
@@ -58,25 +57,25 @@ namespace AnalizadorLexico
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.rtSintaxis = new System.Windows.Forms.RichTextBox();
             this.label6 = new System.Windows.Forms.Label();
-            this.groupBox7 = new System.Windows.Forms.GroupBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.btnGenerarIntermedio = new System.Windows.Forms.Button();
+            this.btnCodigoIntermedio = new System.Windows.Forms.Button();
+            this.btnVerIntermedio = new System.Windows.Forms.Button();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.rtCIntermedio = new System.Windows.Forms.RichTextBox();
+            this.btnGenerarIntermedio = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErrores)).BeginInit();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimbolos)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvErroresSintacticos)).BeginInit();
             this.groupBox6.SuspendLayout();
-            this.groupBox7.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
-            //
+            // 
             // groupBox1
-            //
+            // 
             this.groupBox1.Controls.Add(this.txtNumerosLinea);
             this.groupBox1.Controls.Add(this.lblFuente);
             this.groupBox1.Controls.Add(this.btnGuardar);
@@ -88,9 +87,9 @@ namespace AnalizadorLexico
             this.groupBox1.Size = new System.Drawing.Size(379, 226);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            //
+            // 
             // txtNumerosLinea
-            //
+            // 
             this.txtNumerosLinea.AcceptsTab = true;
             this.txtNumerosLinea.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
             this.txtNumerosLinea.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -101,9 +100,9 @@ namespace AnalizadorLexico
             this.txtNumerosLinea.Size = new System.Drawing.Size(16, 117);
             this.txtNumerosLinea.TabIndex = 5;
             this.txtNumerosLinea.Text = "";
-            //
+            // 
             // lblFuente
-            //
+            // 
             this.lblFuente.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
             this.lblFuente.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblFuente.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
@@ -113,9 +112,9 @@ namespace AnalizadorLexico
             this.lblFuente.TabIndex = 4;
             this.lblFuente.Text = "Programa Fuente";
             this.lblFuente.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            //
+            // 
             // btnGuardar
-            //
+            // 
             this.btnGuardar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
             this.btnGuardar.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnGuardar.FlatAppearance.BorderSize = 0;
@@ -389,7 +388,7 @@ namespace AnalizadorLexico
             // 
             // Bytes
             // 
-            this.Bytes.HeaderText = "Tama�o (bytes)";
+            this.Bytes.HeaderText = "Tamaño (bytes)";
             this.Bytes.Name = "Bytes";
             this.Bytes.ReadOnly = true;
             // 
@@ -432,16 +431,6 @@ namespace AnalizadorLexico
             this.btnInfo.Text = "?";
             this.btnInfo.UseVisualStyleBackColor = true;
             this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = global::AnalizadorSintactico.Properties.Resources.Logo;
-            this.pictureBox1.InitialImage = null;
-            this.pictureBox1.Location = new System.Drawing.Point(653, 12);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(233, 67);
-            this.pictureBox1.TabIndex = 5;
-            this.pictureBox1.TabStop = false;
             // 
             // groupBox5
             // 
@@ -545,54 +534,56 @@ namespace AnalizadorLexico
             this.label6.Text = "Sintaxis";
             this.label6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // groupBox7
+            // btnCodigoIntermedio
             // 
-            this.groupBox7.Controls.Add(this.label7);
-            this.groupBox7.Controls.Add(this.btnGenerarIntermedio);
-            this.groupBox7.Controls.Add(this.rtCIntermedio);
-            this.groupBox7.Location = new System.Drawing.Point(907, 88);
-            this.groupBox7.Name = "groupBox7";
-            this.groupBox7.Size = new System.Drawing.Size(333, 226);
-            this.groupBox7.TabIndex = 6;
-            this.groupBox7.TabStop = false;
+            this.btnCodigoIntermedio.Enabled = false;
+            this.btnCodigoIntermedio.Location = new System.Drawing.Point(938, 161);
+            this.btnCodigoIntermedio.Name = "btnCodigoIntermedio";
+            this.btnCodigoIntermedio.Size = new System.Drawing.Size(243, 60);
+            this.btnCodigoIntermedio.TabIndex = 8;
+            this.btnCodigoIntermedio.Text = "Generar código intermedio";
+            this.btnCodigoIntermedio.UseVisualStyleBackColor = true;
+            this.btnCodigoIntermedio.Click += new System.EventHandler(this.btnCodigoIntermedio_Click);
             // 
-            // label7
+            // btnVerIntermedio
             // 
-            this.label7.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(187)))), ((int)(((byte)(222)))), ((int)(((byte)(251)))));
-            this.label7.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label7.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(51)))), ((int)(((byte)(102)))));
-            this.label7.Location = new System.Drawing.Point(-1, 7);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(334, 38);
-            this.label7.TabIndex = 5;
-            this.label7.Text = "Código intermedio";
-            this.label7.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btnVerIntermedio.Enabled = false;
+            this.btnVerIntermedio.Location = new System.Drawing.Point(938, 227);
+            this.btnVerIntermedio.Name = "btnVerIntermedio";
+            this.btnVerIntermedio.Size = new System.Drawing.Size(243, 74);
+            this.btnVerIntermedio.TabIndex = 9;
+            this.btnVerIntermedio.Text = "Ver código intermedio";
+            this.btnVerIntermedio.UseVisualStyleBackColor = true;
+            this.btnVerIntermedio.Click += new System.EventHandler(this.btnVerIntermedio_Click);
             // 
-            // btnGenerarIntermedio
+            // pictureBox1
             // 
-            this.btnGenerarIntermedio.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
-            this.btnGenerarIntermedio.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnGenerarIntermedio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold);
-            this.btnGenerarIntermedio.ForeColor = System.Drawing.Color.White;
-            this.btnGenerarIntermedio.Location = new System.Drawing.Point(188, 178);
-            this.btnGenerarIntermedio.Name = "btnGenerarIntermedio";
-            this.btnGenerarIntermedio.Size = new System.Drawing.Size(127, 35);
-            this.btnGenerarIntermedio.TabIndex = 1;
-            this.btnGenerarIntermedio.Text = "Generar código P";
-            this.btnGenerarIntermedio.UseVisualStyleBackColor = false;
-            this.btnGenerarIntermedio.Click += new System.EventHandler(this.btnGenerarIntermedio_Click);
+            this.pictureBox1.Image = global::AnalizadorSintactico.Properties.Resources.Logo;
+            this.pictureBox1.InitialImage = null;
+            this.pictureBox1.Location = new System.Drawing.Point(653, 12);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(233, 67);
+            this.pictureBox1.TabIndex = 5;
+            this.pictureBox1.TabStop = false;
             // 
             // rtCIntermedio
             // 
-            this.rtCIntermedio.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(210)))), ((int)(((byte)(225)))), ((int)(((byte)(235)))));
-            this.rtCIntermedio.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.rtCIntermedio.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(50)))), ((int)(((byte)(70)))));
-            this.rtCIntermedio.Location = new System.Drawing.Point(16, 51);
+            this.rtCIntermedio.Location = new System.Drawing.Point(999, 12);
             this.rtCIntermedio.Name = "rtCIntermedio";
-            this.rtCIntermedio.ReadOnly = true;
-            this.rtCIntermedio.Size = new System.Drawing.Size(299, 120);
-            this.rtCIntermedio.TabIndex = 0;
+            this.rtCIntermedio.Size = new System.Drawing.Size(100, 34);
+            this.rtCIntermedio.TabIndex = 10;
             this.rtCIntermedio.Text = "";
+            this.rtCIntermedio.Visible = false;
+            // 
+            // btnGenerarIntermedio
+            // 
+            this.btnGenerarIntermedio.Location = new System.Drawing.Point(938, 30);
+            this.btnGenerarIntermedio.Name = "btnGenerarIntermedio";
+            this.btnGenerarIntermedio.Size = new System.Drawing.Size(41, 16);
+            this.btnGenerarIntermedio.TabIndex = 11;
+            this.btnGenerarIntermedio.Text = "button1";
+            this.btnGenerarIntermedio.UseVisualStyleBackColor = true;
+            this.btnGenerarIntermedio.Visible = false;
             // 
             // Form1
             // 
@@ -601,7 +592,10 @@ namespace AnalizadorLexico
             this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(244)))), ((int)(((byte)(244)))), ((int)(((byte)(248)))));
             this.ClientSize = new System.Drawing.Size(1252, 690);
-            this.Controls.Add(this.groupBox7);
+            this.Controls.Add(this.btnGenerarIntermedio);
+            this.Controls.Add(this.rtCIntermedio);
+            this.Controls.Add(this.btnVerIntermedio);
+            this.Controls.Add(this.btnCodigoIntermedio);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.btnInfo);
@@ -623,11 +617,10 @@ namespace AnalizadorLexico
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimbolos)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.groupBox5.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvErroresSintacticos)).EndInit();
             this.groupBox6.ResumeLayout(false);
-            this.groupBox7.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -666,15 +659,15 @@ namespace AnalizadorLexico
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.RichTextBox rtSintaxis;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button btnCodigoIntermedio;
+        private System.Windows.Forms.Button btnVerIntermedio;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.DataGridViewTextBoxColumn Tipo;
         private System.Windows.Forms.DataGridViewTextBoxColumn Valor;
         private System.Windows.Forms.DataGridViewTextBoxColumn Scope;
         private System.Windows.Forms.DataGridViewTextBoxColumn Bytes;
-        private System.Windows.Forms.GroupBox groupBox7;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Button btnGenerarIntermedio;
         private System.Windows.Forms.RichTextBox rtCIntermedio;
+        private System.Windows.Forms.Button btnGenerarIntermedio;
     }
 }
